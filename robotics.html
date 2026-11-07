@@ -66,20 +66,20 @@ function list(){$("problems").replaceChildren();problems.forEach((p,i)=>{const l
 function reset(){const p=problems[current];settings={...standard,...p.seed};$("title").textContent=p.title;$("prompt").textContent=p.ask;
 $("answer").replaceChildren();for(const [value,txt] of p.opts){const o=document.createElement("option");o.value=value;o.textContent=txt;$("answer").append(o);}$("answer").selectedIndex=-1;
 $("feedback").textContent="";$("feedback").className="";$("help").textContent="";$("help").classList.add("hidden");
-for(const [key,,, , ,] of controls){$(key).value=settings[key];$(key+"-out").textContent=settings[key];}
+for(const [key,,unit] of controls){$(key).value=settings[key];$(key+"-out").textContent=settings[key]+unit;}
 $("axis").value=settings.axis;list();draw();}
 function grade(){
 const v=$("answer").value;if(!v){$("feedback").className="status bad";$("feedback").textContent="Make a prediction first.";return;}
 const p=problems[current],m=draw();let expected;
 if(p.id==="area"){const doubled=core.calc({...settings,s2:settings.s2*2});const ratio=m.prior.area>1e-12?doubled.prior.area/m.prior.area:NaN;expected=Math.abs(ratio-2)<1e-7?"2":Math.abs(ratio-1)<1e-7?"1":Math.abs(ratio-4)<1e-7?"4":"unknown";}
 else if(p.id==="singularity")expected=Math.abs(m.detJ)<1e-8?"no":"yes";
-else if(p.id==="sensor")expected=m.U[1][1]<m.P[1][1]-1e-13?"yes":"no";
+else if(p.id==="sensor"){const other=settings.axis==="x"?1:0;expected=m.U[other][other]<m.P[other][other]-1e-13?"yes":"no";}
 else {const base=core.calc({...settings,rho:0});expected=m.prior.area>base.prior.area+1e-12?"yes":"no";}
 const correct=v===expected;$("feedback").className="status "+(correct?"good":"bad");$("feedback").textContent=correct?"Correct.":"Try again. Change the parameters or open the reference.";
 if(correct){progress[p.id]=true;try{localStorage.setItem("tacit-robotics-v1",JSON.stringify(progress));}catch{}list();}
 }
 for(const [key,label,unit,min,max,step] of controls){const l=document.createElement("label");l.textContent=label;const o=document.createElement("output");o.id=key+"-out";l.append(o);const el=document.createElement("input");el.type="range";el.id=key;el.min=min;el.max=max;el.step=step;el.addEventListener("input",()=>{settings[key]=Number(el.value);o.textContent=el.value+unit;$("feedback").textContent="";draw();});l.append(el);$("controls").append(l);}
-$("axis").addEventListener("change",()=>{settings.axis=$("axis").value;draw();});
+$("axis").addEventListener("change",()=>{settings.axis=$("axis").value;if(problems[current].id==="sensor")$("prompt").textContent="At this pose, does observing "+settings.axis+" with a noisy sensor also reduce uncertainty in "+(settings.axis==="x"?"y":"x")+"?";$("feedback").textContent="";draw();});
 $("check").onclick=grade;$("reset").onclick=reset;$("reference").onclick=()=>{$("help").textContent=problems[current].ref;$("help").classList.toggle("hidden");};
 function route(){const id=location.hash.slice(1),i=problems.findIndex(p=>p.id===id);current=i<0?0:i;reset();}
 window.addEventListener("hashchange",route);route();
