@@ -4,7 +4,7 @@ The public, hands-on companion to [FKEN](https://github.com/JadanPoll/FKEN_Ecosy
 
 ## Try the GPU-hardware lab
 
-[Open the exercise page](index.html) (or serve the repository with `python3 -m http.server 8000` and visit `http://localhost:8000`). The page is a single self-contained HTML file with no build process or runtime dependencies.
+[Try the browser preview](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html) (served by a third-party static preview CDN; not yet browser-verified here). Alternatively, open [index.html](index.html) or serve the repository with `python3 -m http.server 8000` and visit `http://localhost:8000`). The page is a single self-contained HTML file with no build process or runtime dependencies.
 
 Three five-minute exercises:
 
