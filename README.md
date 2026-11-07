@@ -4,6 +4,8 @@ The public practice companion to [FKEN](https://github.com/JadanPoll/FKEN_Ecosys
 
 ## GPU problem sets
 
+**Interface copy:** Show the user the problem, controls and observations. Keep AI-facing guardrails and explanations of obvious interface boundaries out of the UI; put meaningful modeling limitations here in the README.
+
 [**Open the problem sets**](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html) (third-party static preview). The landing page is a simple topic-organized list, inspired by HDLBits. Each problem opens the existing instrumented GPU workspace, and its completion is tracked separately.
 
 - Count 32-byte memory sectors requested by a warp.
