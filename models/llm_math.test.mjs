@@ -1,0 +1,13 @@
+import {readFileSync} from "node:fs";
+import {test} from "node:test";
+import {runInNewContext} from "node:vm";
+import assert from "node:assert/strict";
+const src=readFileSync(new URL("./llm-core.js",import.meta.url),"utf8");
+const C=runInNewContext(src+"\nLLMCore");
+test("BPE preserves the input and applies ranked merges",()=>{for(let n=0;n<=4;n++){const r=C.bpe("lower",n);assert.equal(r.parts.join(""),"lower");assert.equal(r.parts.length,5-n);}});
+test("Context returns exactly a suffix",()=>{for(let n=1;n<=6;n++){const r=C.context(n);assert.equal(r.kept.join(","),r.all.slice(-n).join(","));}});
+test("Causal masks and KV cache match full-prefix attention",()=>{for(let i=0;i<4;i++){const r=C.attention(C.input,i),c=C.cached(C.input)[i];assert.ok(r.weights.every((w,j)=>j<=i||w===0));assert.ok(Math.abs(r.weights.reduce((a,b)=>a+b)-1)<1e-12);for(let j=0;j<2;j++)assert.ok(Math.abs(r.mixed[j]-c.mixed[j])<1e-12);}});
+test("SGD gradients match finite differences and update loss downhill",()=>{for(let i=0;i<100;i++){const w=-2+i/25,x=1.5,y=i%2,lr=.1,h=1e-5,f=C.sgd(w,x,y,lr),fd=(C.sgd(w+h,x,y,lr).before-C.sgd(w-h,x,y,lr).before)/(2*h);assert.ok(Math.abs(f.gradient-fd)<1e-7);assert.ok(f.after<=f.before+1e-12);}});
+test("Top-k sampling normalizes and keeps the specified support",()=>{for(const t of [.5,1,1.5,2])for(let k=1;k<=4;k++){const r=C.decode(t,k,.35);assert.ok(Math.abs(r.p.reduce((a,b)=>a+b)-1)<1e-12);assert.equal(r.supported,k);}});
+test("KV computation and memory accounting",()=>{for(let n=1;n<100;n++){const r=C.work(n);assert.equal(r.cache,n*(n+1)/2);assert.equal(r.rerun,n*(n+1)*(n+2)/6);}assert.equal(C.kvBytes(2,4,2,8,16,16),8192);});
+test("Packed raw quantized weights and cosine matching",()=>{for(const bits of [4,8,12,16]){const q=C.quant(bits);assert.equal(q.bytes,bits);assert.ok(q.mse>=0);}assert.equal(C.retrieve(1,.4).winner,"alpha");assert.equal(C.retrieve(.4,1).winner,"gamma");});

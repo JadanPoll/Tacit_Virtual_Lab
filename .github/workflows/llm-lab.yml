@@ -1,0 +1,20 @@
+name: LLM math exercises
+on:
+  push:
+    paths:
+      - 'models/llm-core.js'
+      - 'models/llm_math.test.mjs'
+      - 'llm.html'
+      - '.github/workflows/llm-lab.yml'
+  pull_request:
+    paths:
+      - 'models/llm-core.js'
+      - 'models/llm_math.test.mjs'
+      - 'llm.html'
+  workflow_dispatch:
+jobs:
+  math:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --test models/llm_math.test.mjs
