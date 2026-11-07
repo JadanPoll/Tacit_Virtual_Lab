@@ -2,6 +2,17 @@
 
 The public practice companion to [FKEN](https://github.com/JadanPoll/FKEN_Ecosystem). Its purpose is to recover **demonstrable engineering intuition**, especially where hardware, tool installation, or setup would otherwise be a barrier. It is not a virtual OS or a hub for other projects. We link excellent existing practice environments such as [HDLBits](https://hdlbits.01xz.net/wiki/Problem_sets) rather than rebuilding them.
 
+## Robotics mathematics
+
+The index begins with direct links to existing mathematical learning environments instead of rebuilding them:
+
+- [Arm Playground](https://bakulbadwal.github.io/arm-playground/) — guided predict/check lessons for FK, IK, Jacobians, feedback control, and a five-joint arm.
+- [Interactive probability lessons](https://www.dustinturner.ai/learn/probability) — Bayesian updating, covariance, uncertainty ellipses, and Kalman filtering.
+- [Interactive Kalman monograph](https://pablowilliams.github.io/Innovation/index.html) — process noise, measurement noise, and predict/update intuition.
+- [Robot Localization, Explained](https://ferrolho.github.io/robot-localization-explained/) — dead reckoning, EKF sensor fusion, and LiDAR localization.
+
+FKEN's robotics scaffolding folder in the user's Drive contains *Modern Robotics*, *Probabilistic Robotics*, and *Small Unmanned Aircraft: Theory and Practice*. These are the theoretical references, not files reproduced in this public repository. New interactive code is justified only by a mathematical skill not already well served by these resources.
+
 ## GPU problem sets
 
 **Interface copy:** Show the user the problem, controls and observations. Keep AI-facing guardrails and explanations of obvious interface boundaries out of the UI; put meaningful modeling limitations here in the README.
