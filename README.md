@@ -2,9 +2,9 @@
 
 The public practice companion to [FKEN](https://github.com/JadanPoll/FKEN_Ecosystem). Its purpose is to recover **demonstrable engineering intuition**, especially where hardware, tool installation, or setup would otherwise be a barrier. It is not a virtual OS or a hub for other projects. We link excellent existing practice environments such as [HDLBits](https://hdlbits.01xz.net/wiki/Problem_sets) rather than rebuilding them.
 
-## Start with the GPU lab
+## GPU problem sets
 
-[**Try the three exercises**](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html) (third-party static preview; not yet independently browser-verified).
+[**Open the problem sets**](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html) (third-party static preview). The landing page is a simple topic-organized list, inspired by HDLBits. Each problem opens the existing instrumented GPU workspace, and its completion is tracked separately.
 
 - Count 32-byte memory sectors requested by a warp.
 - Predict SIMT branch divergence.
