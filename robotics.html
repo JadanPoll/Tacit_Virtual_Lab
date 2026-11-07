@@ -1,0 +1,86 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Robot mathematics · Tacit Virtual Lab</title><style>
+*{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,-apple-system,sans-serif;color:#17293a;background:#f7f9fc}header{background:white;border-bottom:1px solid #dbe2e9}header div,main{max-width:1050px;margin:auto;padding:17px}main{padding-top:23px}h1{font-size:29px;margin:5px 0}h2{font-size:19px;margin:0 0 8px}h3{font-size:15px;margin:16px 0 7px}p{margin:7px 0 12px}a{color:#17619f}.muted{color:#5d6a7a}.tiny{color:#62748a;font-size:12px}.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:13px}.panel{background:white;border:1px solid #dce5ed;border-radius:9px;padding:16px;min-width:0}.full{grid-column:1/-1}.problems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 25px;margin:5px 0 0;padding-left:25px}.problems li{padding:3px 0}.selected{font-weight:700}.done{color:#248854;font-weight:750}.nav{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-bottom:17px}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}button{font:inherit;padding:9px 12px;background:white;border:1px solid #b5c6d5;border-radius:6px;cursor:pointer}button.primary{background:#1565a8;color:white;border-color:#1565a8}button:hover{border-color:#1565a8}label{display:block;font-size:13px;font-weight:650;margin:8px 0}label output{float:right;font-weight:500;font-variant-numeric:tabular-nums}input[type=range],select{display:block;width:100%;margin:4px 0 0}input[type=range]{accent-color:#1a78ba}select{padding:7px;border:1px solid #b8c8d8;background:white;border-radius:6px;font:inherit}.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 15px}.status{padding:10px;border-left:4px solid #458bc0;background:#edf4fc}.status.good{border-color:#339869;background:#eafaef}.status.bad{border-color:#c98934;background:#fff5e8}.hidden{display:none}svg{display:block;width:100%;height:auto;background:#f9fcff;border:1px solid #e0e9f1;border-radius:7px}pre{font:12px/1.6 ui-monospace,Consolas,monospace;background:#f2f5f9;padding:8px;margin:4px 0;overflow:auto}.matrices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}.notes{margin:16px 0 35px;color:#5e7080;font-size:12px}@media(max-width:740px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.problems{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}.matrices{grid-template-columns:1fr}}
+</style></head><body><header><div><div class="tiny">FKEN / Tacit Virtual Lab / Robotics</div><h1>Uncertainty at the robot's hand</h1><p class="muted">Change the joint angles, change their uncertainty, and see how it propagates.</p></div></header>
+<main><nav class="nav"><a href="index.html">All problems</a><a href="https://bakulbadwal.github.io/arm-playground/">Arm Playground · kinematics</a><a href="https://ferrolho.github.io/robot-localization-explained/">Robot localization</a></nav>
+<section class="panel" style="margin-bottom:13px"><h2>Problems</h2><ul class="problems" id="problems"></ul></section>
+<div class="grid"><section class="panel">
+<h2 id="title">Joint uncertainty</h2><p id="prompt"></p><label>Your prediction<select id="answer"></select></label><div class="commands"><button class="primary" id="check">Check answer</button><button id="reset">Reset</button><button id="reference">Reference</button></div><div id="feedback" aria-live="polite"></div><p class="status hidden" id="help"></p>
+<h3>Experiment</h3><div class="controls" id="controls"></div><label>Position measurement<select id="axis"><option value="x">x-coordinate</option><option value="y">y-coordinate</option></select></label></section>
+<section class="panel"><h2>Arm and tip uncertainty</h2>
+<svg id="view" viewBox="0 0 480 390" role="img" aria-label="Two-link arm and before/after position uncertainty ellipses">
+<path d="M0 195H480M240 0V390" fill="none" stroke="#e3e9f0"/><text x="457" y="185" font-size="12" fill="#718093">x</text><text x="247" y="16" font-size="12" fill="#718093">y</text>
+<ellipse id="before" fill="#efb552" fill-opacity=".25" stroke="#c48b2c" stroke-width="2"/><ellipse id="after" fill="#5496c4" fill-opacity=".24" stroke="#267eaf" stroke-width="2"/>
+<polyline id="arm" fill="none" stroke="#294d69" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="240" cy="195" r="7" fill="#294d69"/><circle id="joint" r="6" fill="#507f9d"/><circle id="tip" r="6" fill="#1c83b6"/>
+</svg><p class="tiny">Gold: before measurement · Blue: after measurement · 2σ ellipses</p><div id="metrics"></div></section>
+<section class="panel full"><h2>The calculation</h2><p>p = f(q) · Σp ≈ JΣqJᵀ · measurement update: P′ = P − Phᵀ(hPhᵀ+R)⁻¹hP</p><div class="matrices"><div><strong>Jacobian J</strong><pre id="J"></pre></div><div><strong>Joint covariance Σq (rad²)</strong><pre id="Q"></pre></div><div><strong>Tip covariance Σp (m²)</strong><pre id="P"></pre></div><div><strong>After measurement P′ (m²)</strong><pre id="U"></pre></div></div></section></div>
+<p class="notes"><a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/ROBOTICS.md">Model notes</a> · <a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/robotics_math.test.mjs">Tests</a></p>
+</main>
+<script id="math-core">
+"use strict";
+const RobotMath=(()=>{
+const rad=Math.PI/180;
+function calc(o={}){
+const v=Object.assign({q1:30,q2:60,l1:1,l2:0.8,s1:6,s2:8,rho:0,noise:0.1,axis:"x"},o);
+const {q1,q2,l1,l2,s1,s2,rho,noise,axis}=v;
+if(![q1,q2,l1,l2,s1,s2,rho,noise].every(Number.isFinite)||l1<=0||l2<=0||s1<0||s2<0||Math.abs(rho)>1||noise<=0||(axis!=="x"&&axis!=="y"))throw Error("Invalid model parameters");
+const a=q1*rad,b=(q1+q2)*rad,as=s1*rad,bs=s2*rad;
+const joint=[l1*Math.cos(a),l1*Math.sin(a)],tip=[joint[0]+l2*Math.cos(b),joint[1]+l2*Math.sin(b)];
+const J=[[-l1*Math.sin(a)-l2*Math.sin(b),-l2*Math.sin(b)],[l1*Math.cos(a)+l2*Math.cos(b),l2*Math.cos(b)]];
+const Q=[[as*as,rho*as*bs],[rho*as*bs,bs*bs]];
+const mm=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((t,x,k)=>t+x*B[k][j],0)));
+const trans=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+const P=mm(mm(J,Q),trans(J));
+const h=axis==="x"?0:1,R=noise*noise,S=P[h][h]+R;
+const U=P.map((row,i)=>row.map((val,j)=>val-P[i][h]*P[h][j]/S));
+U[1][0]=U[0][1]=(U[1][0]+U[0][1])/2;
+function eig(A){const x=A[0][0],y=(A[0][1]+A[1][0])/2,z=A[1][1],d=Math.sqrt(Math.max(0,(x-z)**2+4*y*y));return {major:Math.sqrt(Math.max(0,(x+z+d)/2)),minor:Math.sqrt(Math.max(0,(x+z-d)/2)),angle:Math.atan2(2*y,x-z)/2,area:Math.PI*Math.sqrt(Math.max(0,x*z-y*y))};}
+return{joint,tip,J,Q,P,U,prior:eig(P),posterior:eig(U),detJ:J[0][0]*J[1][1]-J[0][1]*J[1][0]};
+}
+return{calc};
+})();
+</script><script>
+"use strict";
+const $=id=>document.getElementById(id),core=RobotMath;
+const standard={q1:30,q2:60,l1:1,l2:0.8,s1:6,s2:8,rho:0,noise:0.1,axis:"x"};
+const problems=[
+{id:"area",title:"Doubling joint uncertainty",ask:"If only joint 2's standard deviation doubles, how much does the tip's uncertainty ellipse area grow?",opts:[["1","Unchanged"],["2","Doubles"],["4","Four times"]],seed:{},ref:"For a full-rank Jacobian, det(J Q Jᵀ) = det(J)² det(Q). Doubling a joint's σ quadruples det(Q), so the ellipse area doubles."},
+{id:"singularity",title:"When does the Jacobian lose rank?",ask:"At this fully extended pose, can the hand move instantaneously in every planar direction by varying the joints?",opts:[["yes","Yes"],["no","No"]],seed:{q1:25,q2:0},ref:"For a two-link planar arm det(J) = l₁l₂ sin(q₂). At q₂=0, det(J)=0: the two Jacobian columns are linearly dependent."},
+{id:"sensor",title:"Can measuring x improve knowledge of y?",ask:"At this pose, does observing x with a noisy sensor also reduce uncertainty in y?",opts:[["yes","Yes"],["no","No"]],seed:{q1:30,q2:60,axis:"x"},ref:"The covariance update is P′ = P − Phᵀ(hPhᵀ + R)⁻¹hP. It can reduce y variance from observing x when x and y errors are correlated."},
+{id:"correlation",title:"Correlated joint errors",ask:"Keeping each joint's variance the same, does increasing the correlation magnitude from zero make the tip's uncertainty ellipse area larger?",opts:[["yes","Larger"],["no","Smaller"]],seed:{rho:0.7},ref:"det(Q) = σ₁²σ₂²(1−ρ²), so a nonzero |ρ| makes the 2D covariance ellipse area smaller at the same full-rank pose."}
+];
+const controls=[["q1","Joint 1 angle","°",-180,180,1],["q2","Joint 2 angle","°",-180,180,1],["l1","Link 1 length"," m",0.4,1.5,0.1],["l2","Link 2 length"," m",0.4,1.5,0.1],["s1","Joint 1 σ","°",0,20,0.5],["s2","Joint 2 σ","°",0,20,0.5],["rho","Correlation ρ","",-0.95,0.95,0.05],["noise","Sensor σ"," m",0.02,0.4,0.01]];
+let progress={};try{const v=JSON.parse(localStorage.getItem("tacit-robotics-v1"));if(v&&typeof v==="object"&&!Array.isArray(v))progress=v;}catch{}
+let current=0,settings={...standard};
+const fmt=x=>Number(x.toPrecision(4)).toString();
+const matr=A=>A.map(row=>"[ "+row.map(x=>fmt(x).padStart(10)).join(", ")+" ]").join("\n");
+function setSvg(el,x,y){$(el).setAttribute("cx",x);$(el).setAttribute("cy",y);}
+function draw(){
+const m=core.calc(settings),X=x=>240+x*94,Y=y=>195-y*94;
+$("arm").setAttribute("points",[[0,0],m.joint,m.tip].map(p=>X(p[0])+","+Y(p[1])).join(" "));
+setSvg("joint",X(m.joint[0]),Y(m.joint[1]));setSvg("tip",X(m.tip[0]),Y(m.tip[1]));
+for(const [id,e] of [["before",m.prior],["after",m.posterior]]){$(id).setAttribute("cx",X(m.tip[0]));$(id).setAttribute("cy",Y(m.tip[1]));$(id).setAttribute("rx",e.major*188);$(id).setAttribute("ry",e.minor*188);$(id).setAttribute("transform","rotate("+(-e.angle*180/Math.PI)+" "+X(m.tip[0])+" "+Y(m.tip[1])+")");}
+$("J").textContent=matr(m.J);$("Q").textContent=matr(m.Q);$("P").textContent=matr(m.P);$("U").textContent=matr(m.U);
+$("metrics").textContent="Tip ("+fmt(m.tip[0])+", "+fmt(m.tip[1])+") m · det J "+fmt(m.detJ)+" · ellipse area "+fmt(m.prior.area)+" → "+fmt(m.posterior.area)+" m²";
+return m;}
+function list(){$("problems").replaceChildren();problems.forEach((p,i)=>{const li=document.createElement("li"),a=document.createElement("a");a.href="#"+p.id;a.textContent=p.title;if(i===current)a.className="selected";li.append(a);if(progress[p.id]){const s=document.createElement("span");s.className="done";s.textContent=" ✓";li.append(s)}$("problems").append(li);});}
+function reset(){const p=problems[current];settings={...standard,...p.seed};$("title").textContent=p.title;$("prompt").textContent=p.ask;
+$("answer").replaceChildren();for(const [value,txt] of p.opts){const o=document.createElement("option");o.value=value;o.textContent=txt;$("answer").append(o);}$("answer").selectedIndex=-1;
+$("feedback").textContent="";$("feedback").className="";$("help").textContent="";$("help").classList.add("hidden");
+for(const [key,,, , ,] of controls){$(key).value=settings[key];$(key+"-out").textContent=settings[key];}
+$("axis").value=settings.axis;list();draw();}
+function grade(){
+const v=$("answer").value;if(!v){$("feedback").className="status bad";$("feedback").textContent="Make a prediction first.";return;}
+const p=problems[current],m=draw();let expected;
+if(p.id==="area"){const doubled=core.calc({...settings,s2:settings.s2*2});const ratio=m.prior.area>1e-12?doubled.prior.area/m.prior.area:NaN;expected=Math.abs(ratio-2)<1e-7?"2":Math.abs(ratio-1)<1e-7?"1":Math.abs(ratio-4)<1e-7?"4":"unknown";}
+else if(p.id==="singularity")expected=Math.abs(m.detJ)<1e-8?"no":"yes";
+else if(p.id==="sensor")expected=m.U[1][1]<m.P[1][1]-1e-13?"yes":"no";
+else {const base=core.calc({...settings,rho:0});expected=m.prior.area>base.prior.area+1e-12?"yes":"no";}
+const correct=v===expected;$("feedback").className="status "+(correct?"good":"bad");$("feedback").textContent=correct?"Correct.":"Try again. Change the parameters or open the reference.";
+if(correct){progress[p.id]=true;try{localStorage.setItem("tacit-robotics-v1",JSON.stringify(progress));}catch{}list();}
+}
+for(const [key,label,unit,min,max,step] of controls){const l=document.createElement("label");l.textContent=label;const o=document.createElement("output");o.id=key+"-out";l.append(o);const el=document.createElement("input");el.type="range";el.id=key;el.min=min;el.max=max;el.step=step;el.addEventListener("input",()=>{settings[key]=Number(el.value);o.textContent=el.value+unit;$("feedback").textContent="";draw();});l.append(el);$("controls").append(l);}
+$("axis").addEventListener("change",()=>{settings.axis=$("axis").value;draw();});
+$("check").onclick=grade;$("reset").onclick=reset;$("reference").onclick=()=>{$("help").textContent=problems[current].ref;$("help").classList.toggle("hidden");};
+function route(){const id=location.hash.slice(1),i=problems.findIndex(p=>p.id===id);current=i<0?0:i;reset();}
+window.addEventListener("hashchange",route);route();
+</script></body></html>

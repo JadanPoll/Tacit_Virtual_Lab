@@ -7,17 +7,10 @@
 </style></head><body><header><div><div class="tag">FKEN · Tacit Virtual Lab · GPU hardware</div><h1>Tacit Virtual Lab · Problem sets</h1><p class="muted">Robotics mathematics and GPU architecture.</p></div></header><main>
 <section id="robotics-math">
 <h2>Robotics mathematics</h2>
-<section class="topic"><h3>Geometry, kinematics and control</h3><ul>
-<li><a href="https://bakulbadwal.github.io/arm-playground/#fk">Forward kinematics</a></li>
-<li><a href="https://bakulbadwal.github.io/arm-playground/#ik">Inverse kinematics</a></li>
-<li><a href="https://bakulbadwal.github.io/arm-playground/#jac">Jacobians and singularities</a></li>
-<li><a href="https://bakulbadwal.github.io/arm-playground/#fb">Feedback control</a></li>
-<li><a href="https://bakulbadwal.github.io/arm-playground/#r3">Five-joint arm in 3D</a></li>
-</ul></section>
-<section class="topic"><h3>Probability and estimation</h3><ul>
-<li><a href="https://www.dustinturner.ai/learn/probability">Bayesian reasoning and covariance</a></li>
-<li><a href="https://pablowilliams.github.io/Innovation/index.html">Kalman filtering and measurement noise</a></li>
-<li><a href="https://ferrolho.github.io/robot-localization-explained/">Robot localization and sensor fusion</a></li>
+<section class="topic"><h3>Mathematical practice</h3><ul>
+<li><a href="robotics.html">Joint uncertainty · 4 interactive problems</a></li>
+<li><a href="https://bakulbadwal.github.io/arm-playground/">Arm Playground · kinematics and control</a></li>
+<li><a href="https://ferrolho.github.io/robot-localization-explained/">Robot Localization · estimation and sensor fusion</a></li>
 </ul></section></section>
 <section id="problem-sets"><div class="tag">GPU hardware</div><h2>GPU architecture</h2><nav class="topics" aria-label="Jump to a topic"><a href="#memory">Memory transactions</a><a href="#simt">SIMT &amp; branching</a><a href="#audit">Model auditing</a></nav><section class="topic" id="memory"><h3>GPU memory transactions</h3><ul></ul></section><section class="topic" id="simt"><h3>SIMT control flow</h3><ul></ul></section><section class="topic" id="audit"><h3>Simulator verification</h3><ul></ul></section></section><section id="exercise-area" class="hidden"><p class="back"><a href="#problems">← All problems</a><span id="active-problem" class="fine"></span></p><nav class="tabs" id="tabs" aria-label="Exercises"></nav><div class="layout"><section class="panel"><div class="tag" id="step"></div><h2 id="title"></h2><p id="prompt"></p><div class="fields" id="fields"></div><div class="actions"><button class="primary" id="run">Run model</button><button id="grade">Check my prediction</button><button id="man">What do I need to know?</button></div><div id="feedback" aria-live="polite"></div></section><section class="panel"><h2>Inside the model</h2><p class="fine">32-lane warp · simulated state</p><div id="visual">Run the model to see lane-level evidence.</div><div class="metrics" id="metrics"></div><div class="actions"><button id="inspect">Show lane trace</button></div></section>
 <section class="panel whole"><h2>Terminal</h2><p class="muted">Type <code>help</code> for commands or <code>man</code> for a quick reference.</p><div class="console"><pre id="output" role="log"></pre><form class="cmd" id="form"><span>lab&gt;</span><input id="command" aria-label="Lab command" autocomplete="off" spellcheck="false" placeholder="man"><button class="primary" type="submit">Enter</button></form></div><div class="actions"><button id="export">Export progress</button><button id="import">Import progress</button><input id="file" type="file" accept=".json,application/json" hidden><button id="reset">Reset this exercise</button></div></section></div>

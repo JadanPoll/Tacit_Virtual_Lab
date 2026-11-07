@@ -4,14 +4,9 @@ The public practice companion to [FKEN](https://github.com/JadanPoll/FKEN_Ecosys
 
 ## Robotics mathematics
 
-The index begins with direct links to existing mathematical learning environments instead of rebuilding them:
+[**Joint uncertainty — interactive problems**](robotics.html) is an original standalone model connecting kinematics, Jacobians, covariance propagation and scalar sensor updates. Four prediction tasks share the same instrumented model. The source is one HTML file; [math notes](models/ROBOTICS.md) and [independent numerical tests](models/robotics_math.test.mjs) document it.
 
-- [Arm Playground](https://bakulbadwal.github.io/arm-playground/) — guided predict/check lessons for FK, IK, Jacobians, feedback control, and a five-joint arm.
-- [Interactive probability lessons](https://www.dustinturner.ai/learn/probability) — Bayesian updating, covariance, uncertainty ellipses, and Kalman filtering.
-- [Interactive Kalman monograph](https://pablowilliams.github.io/Innovation/index.html) — process noise, measurement noise, and predict/update intuition.
-- [Robot Localization, Explained](https://ferrolho.github.io/robot-localization-explained/) — dead reckoning, EKF sensor fusion, and LiDAR localization.
-
-FKEN's robotics scaffolding folder in the user's Drive contains *Modern Robotics*, *Probabilistic Robotics*, and *Small Unmanned Aircraft: Theory and Practice*. These are the theoretical references, not files reproduced in this public repository. New interactive code is justified only by a mathematical skill not already well served by these resources.
+For existing strengths, prefer **one primary resource per goal**: [Arm Playground](https://bakulbadwal.github.io/arm-playground/) for kinematics and control, and [Robot Localization, Explained](https://ferrolho.github.io/robot-localization-explained/) for estimation and localization. Do not create a directory of overlapping alternatives.
 
 ## GPU problem sets
 
