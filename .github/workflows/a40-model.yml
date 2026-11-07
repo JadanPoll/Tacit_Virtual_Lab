@@ -1,0 +1,24 @@
+name: A40 teaching model tests
+on:
+  push:
+    paths:
+      - "models/**"
+      - ".github/workflows/a40-model.yml"
+  pull_request:
+    paths:
+      - "models/**"
+      - ".github/workflows/a40-model.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile with strict warnings
+        run: gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror models/a40_model.c -lm -o models/a40_model
+      - name: Parameterized end-to-end and conceptual tests
+        run: python3 models/test_a40.py
+      - name: Sanitizer smoke with multiple SMs and warps
+        run: |
+          gcc -O1 -g -std=c11 -fsanitize=address,undefined -fno-omit-frame-pointer models/a40_model.c -lm -o models/a40_san
+          ASAN_OPTIONS=detect_leaks=1 models/a40_san --sms 2 --warps 3 --instructions 128 --workload mixed --pattern 5 --quiet >/dev/null
