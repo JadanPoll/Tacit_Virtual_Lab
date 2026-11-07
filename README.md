@@ -4,6 +4,12 @@ Build intuition by making predictions, changing parameters, and exploring the be
 
 **[Open the problem sets](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html)**
 
+## LLM systems
+
+**[LLM problem sets](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/llm.html)** — Fifteen interactive problems on tokenization, attention, training updates, decoding, KV caching, memory, quantization, and retrieval. Predict an outcome, vary inputs, and inspect the calculation.
+
+For a real-model view, [Transformer Explainer](https://poloclub.github.io/transformer-explainer/) runs GPT-2 in your browser.
+
 ## Robotics mathematics
 
 **[Uncertainty at the robot's hand](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/robotics.html)** — Explore a two-link robot arm and see how uncertain joint angles affect the position of its hand. Change the angles, joint uncertainty, correlations, and sensor accuracy. Four short problems cover Jacobians, singularities, and covariance.
