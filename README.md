@@ -1,62 +1,30 @@
 # Tacit Virtual Lab
 
-The public practice companion to [FKEN](https://github.com/JadanPoll/FKEN_Ecosystem). Its purpose is to recover **demonstrable engineering intuition**, especially where hardware, tool installation, or setup would otherwise be a barrier. It is not a virtual OS or a hub for other projects. We link excellent existing practice environments such as [HDLBits](https://hdlbits.01xz.net/wiki/Problem_sets) rather than rebuilding them.
+Build intuition by making predictions, changing parameters, and exploring the behavior of executable models.
+
+**[Open the problem sets](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html)**
 
 ## Robotics mathematics
 
-[**Joint uncertainty — interactive problems**](robotics.html) is an original standalone model connecting kinematics, Jacobians, covariance propagation and scalar sensor updates. Four prediction tasks share the same instrumented model. The source is one HTML file; [math notes](models/ROBOTICS.md) and [independent numerical tests](models/robotics_math.test.mjs) document it.
+**[Uncertainty at the robot's hand](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/robotics.html)** — Explore a two-link robot arm and see how uncertain joint angles affect the position of its hand. Change the angles, joint uncertainty, correlations, and sensor accuracy. Four short problems cover Jacobians, singularities, and covariance.
 
-For existing strengths, prefer **one primary resource per goal**: [Arm Playground](https://bakulbadwal.github.io/arm-playground/) for kinematics and control, and [Robot Localization, Explained](https://ferrolho.github.io/robot-localization-explained/) for estimation and localization. Do not create a directory of overlapping alternatives.
+For further practice: [Arm Playground](https://bakulbadwal.github.io/arm-playground/) (kinematics and control) · [Robot Localization, Explained](https://ferrolho.github.io/robot-localization-explained/) (localization and sensor fusion).
 
-## GPU problem sets
+## GPU architecture
 
-**Interface copy:** Show the user the problem, controls and observations. Keep AI-facing guardrails and explanations of obvious interface boundaries out of the UI; put meaningful modeling limitations here in the README.
+**[GPU problem sets](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html#problems)** — Twelve problems on memory access patterns, SIMT branching, and debugging a GPU performance model. Predict an outcome, run it, inspect the lane-level trace, and check your answer.
 
-[**Open the problem sets**](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html) (third-party static preview). The landing page is a simple topic-organized list, inspired by HDLBits. Each problem opens the existing instrumented GPU workspace, and its completion is tracked separately.
+Progress is saved in your browser. GPU problems also support JSON export and import.
 
-- Count 32-byte memory sectors requested by a warp.
-- Predict SIMT branch divergence.
-- Audit a misleading shortcut used by the original simulator. **Crossing a 128-byte cache-line boundary does not by itself imply poor coalescing** on Ampere; the 32-byte sector count is the useful observable.
+## A40-inspired simulator
 
-The exercises provide a visual trace, concise `man` help, immediate self-checks, local progress, and JSON export/import. No GPU or sign-in required.
-
-## A deeper executable reference: A40-inspired C model
-
-[**Single-file model**](models/a40_model.c) · [**Parameterized acceptance tests**](models/test_a40.py)
-
-This is an **improved, explicitly uncalibrated** version of the ~1,900-line A40-oriented C simulator supplied as a PDF. It preserves many of its original structural concepts (SMs, warps, simplified issue behavior, caches, DRAM timing, coalescing and divergence) while making it practical to test and interrogate.
-
-Build locally:
+The [single-file C simulator](models/a40_model.c) models SMs, warps, memory transactions, caches, branch behavior, and simplified scheduling. Try different workloads or inspect the addresses accessed by a warp.
 
 ```sh
-gcc -std=c11 -O2 -Wall -Wextra -Werror models/a40_model.c -lm -o a40_model
+gcc -std=c11 -O2 -Wall -Wextra models/a40_model.c -lm -o a40_model
 ./a40_model --help
-
-# Realistic side-by-side memory scenarios
-./a40_model --sms 1 --warps 1 --instructions 48 --workload memory --pattern 0 --quiet
-./a40_model --sms 1 --warps 1 --instructions 48 --workload memory --pattern 2 --quiet
-
-# Inspect the actual addresses touched by the warp
 ./a40_model --probe --base 96 --stride 4
 ./a40_model --branch-probe --predicate 2 --mask 0xffffffff
-./a40_model --cache-seq 0,32768,65536,98304,0,131072,32768,0
-
-# Automated scenario, boundary and parameter tests
-python3 models/test_a40.py
 ```
 
-The six selectable memory patterns are contiguous, stride 2, stride 32, scattered, broadcast and mixed. The model offers bounded `--cycles`, `--sms`, `--warps`, and `--instructions` parameters; exiting because of a cycle limit is reported as a failure rather than a completed experiment.
-
-### Evidence and limitations
-
-The supplied original C program crashed on its default process stack. Running it with an unlimited stack revealed that short light-workload simulations progressed slowly; its original workload setup repeatedly overwrote an instruction slot and was not used by the fetch path. We corrected its allocation, exposed actual selectable scenarios, fixed misleading sector summaries, added release of allocations, and replaced unsupported hardware speedup claims with explicit model labels.
-
-On a local Linux/GCC run:
-- Strict `-Wall -Wextra -Wpedantic -Werror` compilation passed.
-- **Seven test families** passed (scenario comparisons, randomized memory-address/mask probes, all eight modeled branch predicates, cache LRU conflicts, mixed workloads, bounded termination).
-- An AddressSanitizer/UBSan run with 2 SMs × 3 warps completed without reported errors.
-- A complete short 84-SM configuration ran 2,688 compute instructions.
-
-**None of this establishes real A40 timing accuracy.** Instruction arithmetic is not executed as a CUDA program; the scheduler, caches, DRAM latencies and branch reconvergence remain teaching abstractions. The source PDF claims 70–85% timing agreement but supplies no reproducible comparison data. Do not interpret the model's cycle, speedup, IPC, or utilization figures as measurements of an A40.
-
-See [NVIDIA CUDA Best Practices on coalescing](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/) for hardware grounding. The **single-file C model** is the trunk; browser exercises can become its branches after their semantics are checked against it. The current browser exercises are still a separate, simpler JavaScript adaptation, not yet a C/WASM integration.
+[Simulation tests](models/test_a40.py) · [A40 model notes and results](models/A40_NOTES.md) · [Robotics model notes](models/ROBOTICS.md) · [Robotics math tests](models/robotics_math.test.mjs)
