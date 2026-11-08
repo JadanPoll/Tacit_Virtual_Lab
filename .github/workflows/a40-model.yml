@@ -18,6 +18,8 @@ jobs:
         run: gcc -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror models/a40_model.c -lm -o models/a40_model
       - name: Parameterized end-to-end and conceptual tests
         run: python3 models/test_a40.py
+      - name: Virtual GPU kernel transaction and correctness tests
+        run: node models/gpu-virtual.test.cjs
       - name: Sanitizer smoke with multiple SMs and warps
         run: |
           gcc -O1 -g -std=c11 -fsanitize=address,undefined -fno-omit-frame-pointer models/a40_model.c -lm -o models/a40_san
