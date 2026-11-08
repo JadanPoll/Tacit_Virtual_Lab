@@ -40,29 +40,29 @@ const tasks=[
 {id:"gradient",name:"Compute the cross-entropy gradient",description:"Given the actual next-token logits and the correct token index, return the gradient of cross-entropy with respect to every logit.",starter:"function solve(logits, target) {\n  // Return one derivative per logit.\n  return [];\n}",hint:"For softmax cross-entropy, the gradient is softmax(logits) minus the one-hot target. A stable implementation first subtracts the largest logit."},
 {id:"distribution",name:"Implement temperature and top-k decoding",description:"Transform the model's output logits into a normalized probability distribution, applying temperature and retaining only the top k candidates. Return one probability per vocabulary item.",starter:"function solve(logits, temperature, k) {\n  // Return a probability for each vocabulary entry.\n  return [];\n}",hint:"Keep the indices of the k largest logits, divide their scores by temperature, apply stable softmax across those candidates, and set the remaining probabilities to zero."}
 ];
-let selected=null,trace=null,busy=false,gradeWorker=null,gradeTimeout=null,engine=null;
+let selected=null,trace=null,busy=false,trainingDone=false,gradeWorker=null,gradeTimeout=null,engine=null;
 let progress={};try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&typeof x==="object")progress=x;}catch{}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(progress));}catch{}}
 function report(el,t){$(el).textContent=t;}
 function list(){const list=$("problems");list.replaceChildren();for(const t of tasks){const li=document.createElement("li"),a=document.createElement("a");a.href="#"+t.id;a.textContent=t.name;if(selected===t)a.className="active";li.append(a);if(progress[t.id]?.complete){const s=document.createElement("span");s.className="done";s.textContent="✓";li.append(s);}list.append(li);}}
 function route(){const id=decodeURIComponent(location.hash.slice(1)),t=tasks.find(x=>x.id===id)||null;selected=t;list();$("editors").classList.toggle("hidden",!t);if(!t)return;
  report("problem-title",t.name);report("task",t.description);$("solution").value=progress[t.id]?.code??t.starter;report("message","Write your function, then run the tests.");$("message").className="";$("hint-panel").classList.add("hidden");}
-function markBusy(on){busy=on;for(const id of ["reset-model","train","generate"])$(id).disabled=on;}
+function markBusy(on){busy=on;for(const id of ["reset-model","train","generate"])$(id).disabled=on;$("train").disabled=on||trainingDone;}
 function showState(data){
- trace=data;markBusy(false);
- report("model-status","Training step "+data.step+" · "+data.parameters+" parameters · "+data.vocab.length+" token IDs\nMost recent loss: "+data.loss.toFixed(4));
+ trace=data;trainingDone=data.step>=data.trainingHorizon;markBusy(false);
+ report("model-status","Training step "+data.step+" · "+data.parameters+" parameters · "+data.vocab.length+" token IDs\nMost recent loss: "+data.loss.toFixed(4)+"\nLearning rate: "+data.learningRate.toFixed(6)+" · schedule: "+data.step+"/"+data.trainingHorizon+(trainingDone?" (complete; reset to train again)":""));
  const q=data.head;
  report("trace","Training example: "+data.doc+" · position "+data.position+"\nQuery: "+q.q.map(v=>v.toFixed(4)).join(", ")+"\nKeys: "+q.keys.map(row=>"["+row.map(v=>v.toFixed(4)).join(", ")+"]").join(" ")+"\nValues: "+q.values.map(row=>"["+row.map(v=>v.toFixed(4)).join(", ")+"]").join(" ")+"\nAttention weights: "+q.weights.map(v=>v.toFixed(4)).join(", ")+"\nNext-token logits: "+data.logits.map(v=>v.toFixed(4)).join(", "));
  report("output","Recent losses: "+data.history.slice(-10).map(v=>v.toFixed(3)).join(" · ")+"\nGenerate a sample to see how the model currently behaves.");
 }
-function resetModel(){
+function resetModel(){trainingDone=false;
  if(!engine)return;
  markBusy(true);report("model-status","Training on the selected examples…");
  engine.postMessage({type:"reset",dataset:$("dataset").value});
 }
 function newEngine(){
  engine=new Worker("models/llm-engine-worker.js",{type:"module"});
- engine.onmessage=({data})=>{if(data.type==="state")showState(data);else if(data.type==="generated"){markBusy(false);report("output","Generated: "+JSON.stringify(data.sample)+"\nFirst-token probabilities: "+(data.probabilities||[]).map(v=>v.toFixed(3)).join(", "));}else if(data.type==="error"){markBusy(false);report("model-status",data.message);}};
+ engine.onmessage=({data})=>{if(data.type==="state")showState(data);else if(data.type==="generated"){markBusy(false);report("output","Generated: "+JSON.stringify(data.sample)+"\nFirst-token probabilities: "+(data.probabilities||[]).map(v=>v.toFixed(3)).join(", "));}else if(data.type==="limit"){trainingDone=true;markBusy(false);report("model-status",data.message);}else if(data.type==="error"){markBusy(false);report("model-status",data.message);}};
  engine.onerror=()=>{markBusy(false);report("model-status","The model could not start. Reload the page.");};
  resetModel();
 }
