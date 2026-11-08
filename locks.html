@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Virtual Linux deadlock investigation · Tacit Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f9fc;color:#172437;font:15px/1.5 system-ui,sans-serif}
+header{background:white;border-bottom:1px solid #d8e1ec}header>div,main{max-width:1020px;margin:auto;padding:18px}
+h1{font-size:28px;margin:4px 0}h2{font-size:19px;margin:4px 0 10px}p{margin:9px 0 13px}a{color:#155fac}.muted{color:#607286}
+.layout{display:grid;grid-template-columns:1fr 1.2fr;gap:14px}.panel{background:#fff;border:1px solid #dae3ed;border-radius:10px;padding:17px;min-width:0}.full{grid-column:1/-1}
+label{display:block;font-weight:600;margin:12px 0}select{display:block;margin-top:6px;width:100%;padding:9px;border:1px solid #b2c2d3;border-radius:6px;font:inherit}
+button{padding:9px 14px;border:1px solid #a9bdcd;border-radius:7px;background:white;font:inherit;cursor:pointer}
+button.primary{background:#145f9d;border-color:#145f9d;color:white}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+pre{background:#edf3f8;border-radius:7px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.55 ui-monospace,Consolas,monospace}
+.good{border-left:4px solid #22845a;padding:10px;background:#eaf8ef}.bad{border-left:4px solid #bb7531;padding:10px;background:#fff5e7}
+@media(max-width:740px){.layout{grid-template-columns:1fr}.full{grid-column:auto}}
+</style></head><body><header><div><p class="muted"><a href="index.html">Tacit Virtual Lab</a> / Linux concurrency</p><h1>Investigate a service deadlock</h1><p class="muted">Repair worker lock ordering and synchronization, then explore every reachable interleaving under the virtual scheduler.</p></div></header><main>
+<section class="panel" style="margin-bottom:14px"><h2>Incident</h2>
+<p>Two worker threads each need both mutexes A and B. One takes A then B; the other takes B then A. A debugging barrier forces both workers to hold their first lock before attempting the second. The service hangs waiting for both workers to finish.</p>
+<p><strong>Mission:</strong> make every possible schedule terminate, not just the one you happened to test. Try a partial fix and inspect its remaining counterexample. Then establish a consistent lock order and handle the barrier correctly.</p></section>
+<div class="layout"><section class="panel"><h2>Edit the synchronization design</h2>
+<label>Worker 1 lock order<select id="first"><option value="AB">A then B</option><option value="BA">B then A</option></select></label>
+<label>Worker 2 lock order<select id="second"><option value="BA">B then A</option><option value="AB">A then B</option></select></label>
+<label><input type="checkbox" id="barrier" checked> Require both workers to hold their first lock before proceeding (debugging barrier)</label>
+<div class="actions"><button class="primary" id="explore">Explore all schedules</button><button id="reset">Restore incident</button></div>
+<p>The virtual scheduler treats lock acquisition, release, and barrier passage as atomic actions. It explores reachable state transitions rather than sampling one schedule.</p></section>
+<section class="panel"><h2>Scheduler evidence</h2>
+<p id="status" aria-live="polite">Run the original incident to inspect the deadlock.</p>
+<pre id="counts">No trace yet.</pre><h2 id="trace-label">Execution trace</h2><pre id="trace">Run the virtual scheduler.</pre>
+</section>
+<section class="panel full"><h2>Real-source correspondence and scope</h2>
+<p>The scenario comes from <a href="gdb/linux_incidents.c">the real pthread incident program</a>. Its C code has two mutexes, a barrier, and opposing lock acquisition orders. This page is an <em>explicit-state model</em> of that concurrency problem; it does not claim to run Linux, GDB, pthreads, or all behaviors of a real kernel. The source also has a <a href="gdb/test_incidents.py">native test harness</a> for reproducible incidents.</p>
+<p>A good debugging sequence: reproduce a failure, inspect the holding/waiting relationships, change one assumption, search for counterexamples, and only accept a fix after exhaustive exploration of this bounded model. Afterward, validate the equivalent C patch with the native tests and thread tooling.</p>
+<p><a href="models/lock-lab.js">Virtual scheduler model</a> · <a href="models/lock-lab.test.cjs">Regression tests</a></p>
+</section></div></main>
+<script src="models/lock-lab.js"></script><script>
+"use strict";
+const $=id=>document.getElementById(id);
+function run(){
+ const toPlan=v=>v==="AB"?["A","B"]:["B","A"];
+ try {
+  const r=LockLab.explore({plans:[toPlan($("first").value),toPlan($("second").value)],barrier:$("barrier").checked});
+  $("status").className=r.safe?"good":"bad";
+  $("status").textContent=r.safe?"PASS: every reachable state terminates under this bounded model.":"FAIL: at least one reachable schedule deadlocks. Inspect the witness, change the design, and explore again.";
+  $("counts").textContent="Reachable states: "+r.states+"\nDeadlocked terminal states: "+r.deadlocks+
+    "\nSuccessfully terminated terminal states: "+r.terminations+"\nBarrier enabled: "+r.barrier;
+  const witness=r.failure||{trace:r.success,state:null};
+  $("trace-label").textContent=r.safe?"One successful execution":"Counterexample execution";
+  $("trace").textContent=witness.trace.map((step,i)=>(i+1)+". "+step).join("\n")+
+    (witness.state?"\n\nStuck state:\nWorker PCs: "+witness.state.pc.join(", ")+
+    "\nLock owners (0-based workers; -1 is free): "+JSON.stringify(witness.state.locks):"\n\nBoth workers completed.");
+ }catch(e){$("status").className="bad";$("status").textContent=e.message;}
+}
+$("explore").onclick=run;
+$("reset").onclick=()=>{$("first").value="AB";$("second").value="BA";$("barrier").checked=true;run();};
+run();
+</script></body></html>
