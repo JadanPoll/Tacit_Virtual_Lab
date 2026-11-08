@@ -4,6 +4,10 @@ on:
     paths:
       - "models/**"
       - "robotics.html"
+      - "index.html"
+      - "gpu-investigation.html"
+      - "locks.html"
+      - "llm.html"
       - ".github/workflows/a40-model.yml"
   pull_request:
     paths:
@@ -21,6 +25,8 @@ jobs:
         run: python3 models/test_a40.py
       - name: Virtual GPU kernel transaction and correctness tests
         run: node models/gpu-virtual.test.cjs
+      - name: Browser script syntax and navigation smoke
+        run: node models/browser-smoke.test.cjs
       - name: Virtual lock scheduler exhaustive tests
         run: node models/lock-lab.test.cjs
       - name: Robotics mathematics and mission acceptance tests
