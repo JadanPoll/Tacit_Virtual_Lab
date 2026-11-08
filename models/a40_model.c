@@ -234,9 +234,9 @@ typedef struct {
 
 // Memory coalescing analysis result
 typedef struct {
-    int num_transactions;      // 1 = perfect coalesce, 32 = worst case
-    u64 transaction_addrs[32]; // Base address of each transaction
-    int transaction_sizes[32]; // Size of each transaction in bytes
+    int num_transactions;      // Unique 32-byte sectors, up to 64 for crossing 4-byte accesses
+    u64 transaction_addrs[WARP_SIZE * 2]; // Start and end sectors of 4-byte accesses
+    int transaction_sizes[WARP_SIZE * 2]; // Size of each transaction in bytes
     bool fully_coalesced;
 } CoalesceResult;
 
@@ -911,27 +911,23 @@ CoalesceResult analyze_coalescing(Instruction *instr, int warp_id) {
         return result;
     }
 
-    // Collect unique 32-byte sectors accessed
-    u64 sectors[WARP_SIZE];
+    // A 4-byte access can straddle two 32-byte sectors when unaligned.
+    // Collect both sectors without double-counting any shared between lanes.
+    u64 sectors[WARP_SIZE * 2];
     int num_sectors = 0;
 
     for (int tid = 0; tid < WARP_SIZE; tid++) {
         if (!(instr->active_mask & (1u << tid))) continue;
 
         u64 addr = instr->thread_addrs[tid];
-        u64 sector = (addr / SECTOR_SIZE) * SECTOR_SIZE;
-
-        // Check if we've seen this sector
-        bool found = false;
-        for (int j = 0; j < num_sectors; j++) {
-            if (sectors[j] == sector) {
-                found = true;
-                break;
+        u64 first = (addr / SECTOR_SIZE) * SECTOR_SIZE;
+        u64 last = ((addr + WORD_SIZE - 1) / SECTOR_SIZE) * SECTOR_SIZE;
+        for (u64 sector = first; sector <= last; sector += SECTOR_SIZE) {
+            bool found = false;
+            for (int j = 0; j < num_sectors; j++) {
+                if (sectors[j] == sector) { found = true; break; }
             }
-        }
-
-        if (!found) {
-            sectors[num_sectors++] = sector;
+            if (!found) sectors[num_sectors++] = sector;
         }
     }
 
