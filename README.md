@@ -1,36 +1,34 @@
 # Tacit Virtual Lab
 
-Build intuition by making predictions, changing parameters, and exploring the behavior of executable models.
+Practice engineering by changing executable systems, finding the cause of failures, and verifying repairs. The investigations run without physical lab equipment.
 
-**[Open the problem sets](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html)**
+**[Open the virtual lab](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html)**
 
-## LLM systems
+## Engineering investigations
 
-**[LLM coding problems](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/llm.html)** — Implement an attention head, cross-entropy gradient, and top-k temperature decoder. Test your code against calculations from a running GPT, train the model on small examples, and inspect its activations.
+- **[GPU kernel optimization](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/gpu-investigation.html)** — A 32×32 transpose returns correct values but requests too many memory sectors. Edit the kernel, stage data, inspect warp accesses, and verify correctness and sector counts against independent test inputs. Includes a reference implementation and source/tests.
+- **[Robot measurement planning](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/robotics.html#mission)** — Choose a two-link arm pose and plan up to two position measurements to satisfy a target-location tolerance and a covariance specification. Explore the Jacobian, measurement choice, and uncertainty ellipses.
+- **[Linux lock-order deadlock](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/locks.html)** — Change worker lock ordering and barrier synchronization; a deterministic virtual scheduler checks **all reachable interleavings** and shows a counterexample when a deadlock remains. The original pthread source and native GDB tests are included.
+- **[Working GPT components](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/llm.html)** — Implement attention, the cross-entropy gradient, and temperature/top-k decoding against calculations from a real small GPT. Train, generate, and inspect model activations and the learning-rate schedule.
 
-For a real-model view, [Transformer Explainer](https://poloclub.github.io/transformer-explainer/) runs GPT-2 in your browser.
+The [GPU concept probes](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html#memory) are optional short exercises. They are not substitutes for the engineering investigations.
 
-## Robotics mathematics
+## Deeper executable models
 
-**[Uncertainty at the robot's hand](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/robotics.html)** — Explore a two-link robot arm and see how uncertain joint angles affect the position of its hand. Change the angles, joint uncertainty, correlations, and sensor accuracy. Four short problems cover Jacobians, singularities, and covariance.
-
-For further practice: [Arm Playground](https://bakulbadwal.github.io/arm-playground/) (kinematics and control) · [Robot Localization, Explained](https://ferrolho.github.io/robot-localization-explained/) (localization and sensor fusion).
-
-## GPU architecture
-
-**[GPU problem sets](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html#problems)** — Twelve problems on memory access patterns, SIMT branching, and debugging a GPU performance model. Predict an outcome, run it, inspect the lane-level trace, and check your answer.
-
-Progress is saved in your browser. GPU problems also support JSON export and import.
-
-## A40-inspired simulator
-
-The [single-file C simulator](models/a40_model.c) models SMs, warps, memory transactions, caches, branch behavior, and simplified scheduling. Try different workloads or inspect the addresses accessed by a warp.
+The [A40-inspired C simulator](models/a40_model.c) models SMs, warps, memory transactions, caches, branch behavior, and simplified scheduling. The virtual kernel investigation uses a **smaller independent transaction model**, not the full C timing/scheduling simulator.
 
 ```sh
 gcc -std=c11 -O2 -Wall -Wextra models/a40_model.c -lm -o a40_model
-./a40_model --help
 ./a40_model --probe --base 96 --stride 4
 ./a40_model --branch-probe --predicate 2 --mask 0xffffffff
+python3 models/test_a40.py
+node models/gpu-virtual.test.cjs
+node models/lock-lab.test.cjs
+node --test models/robotics_math.test.mjs
 ```
 
-[Simulation tests](models/test_a40.py) · [A40 model notes and results](models/A40_NOTES.md) · [Robotics model notes](models/ROBOTICS.md) · [Robotics math tests](models/robotics_math.test.mjs)
+## What the evidence means
+
+A simulation can establish correctness **within its stated model**. It does not demonstrate timing agreement with an NVIDIA A40, complete robot feedback control, actual Linux scheduling, or model deployment to constrained hardware. See [Project capability audit](PROJECT_CAPABILITY_AUDIT.md) for the specific capabilities these labs exercise, the FKEN project ideas they relate to, and the gaps that still prevent stronger claims.
+
+[GPU model notes](models/A40_NOTES.md) · [Robotics model notes](models/ROBOTICS.md) · [LLM model notes](models/LLM.md) · [Native Linux incident tests](gdb/test_incidents.py)
