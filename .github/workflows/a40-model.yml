@@ -25,6 +25,8 @@ jobs:
         run: python3 models/test_a40.py
       - name: Virtual GPU kernel transaction and correctness tests
         run: node models/gpu-virtual.test.cjs
+      - name: Cross-check virtual GPU transaction model against native C
+        run: node models/gpu-c-parity.test.cjs models/a40_model
       - name: Browser script syntax and navigation smoke
         run: node models/browser-smoke.test.cjs
       - name: Virtual lock scheduler exhaustive tests
