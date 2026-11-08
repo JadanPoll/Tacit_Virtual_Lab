@@ -2,7 +2,9 @@
 
 Practice engineering by changing executable systems, finding the cause of failures, and verifying repairs. The investigations run without physical lab equipment.
 
-**[Open the virtual lab](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html)**
+**[Explore FKEN project landscapes first](https://raw.githack.com/JadanPoll/FKEN_Ecosystem/refs/heads/main/Project_Ideas/Landscapes/explore.html)** — compare the neighboring project ideas, question fit, necessary constituent tree, education/research stops, and proposed virtual experiences.
+
+**[Open existing virtual lab experiments](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/index.html)** — some constituent experiments are already executable; others are not yet implemented.
 
 ## Engineering investigations
 
@@ -29,6 +31,6 @@ node --test models/robotics_math.test.mjs
 
 ## What the evidence means
 
-A simulation can establish correctness **within its stated model**. It does not demonstrate timing agreement with an NVIDIA A40, complete robot feedback control, actual Linux scheduling, or model deployment to constrained hardware. See [Project capability audit](PROJECT_CAPABILITY_AUDIT.md) for the specific capabilities these labs exercise, the FKEN project ideas they relate to, and the gaps that still prevent stronger claims.
+A simulation can establish correctness **within its stated model**. It does not demonstrate timing agreement with an NVIDIA A40, complete robot feedback control, actual Linux scheduling, or model deployment to constrained hardware. See the [constituent-first capability audit](PROJECT_CAPABILITY_AUDIT.md) for their actual scope. The parent landscapes should determine which ability to practice; completing an integrated project is not a prerequisite for a useful constituent exercise.
 
 [GPU model notes](models/A40_NOTES.md) · [Robotics model notes](models/ROBOTICS.md) · [LLM model notes](models/LLM.md) · [Native Linux incident tests](gdb/test_incidents.py)
