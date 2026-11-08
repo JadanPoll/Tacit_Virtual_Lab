@@ -12,13 +12,23 @@
 <ellipse id="before" fill="#efb552" fill-opacity=".25" stroke="#c48b2c" stroke-width="2"/><ellipse id="after" fill="#5496c4" fill-opacity=".24" stroke="#267eaf" stroke-width="2"/>
 <polyline id="arm" fill="none" stroke="#294d69" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="240" cy="195" r="7" fill="#294d69"/><circle id="joint" r="6" fill="#507f9d"/><circle id="tip" r="6" fill="#1c83b6"/>
 </svg><p class="tiny">Gold: before measurement · Blue: after measurement · 2σ ellipses</p><div id="metrics"></div></section>
-<section class="panel full"><h2>The calculation</h2><p>p = f(q) · Σp ≈ JΣqJᵀ · measurement update: P′ = P − Phᵀ(hPhᵀ+R)⁻¹hP</p><div class="matrices"><div><strong>Jacobian J</strong><pre id="J"></pre></div><div><strong>Joint covariance Σq (rad²)</strong><pre id="Q"></pre></div><div><strong>Tip covariance Σp (m²)</strong><pre id="P"></pre></div><div><strong>After measurement P′ (m²)</strong><pre id="U"></pre></div></div></section></div>
+<section class="panel full" id="mission"><h2>Virtual engineering mission · meet a tip-position specification</h2>
+<p>Configure the arm to reach the marked target within <strong>9 cm</strong> and plan no more than two Cartesian position measurements to reduce the largest 1σ uncertainty direction below <strong>6 cm</strong>. Choose joint 1 and joint 2 angles with the controls above; select x or y under Position measurement, then take that measurement. The mission fixes link lengths at 1.0 m and 0.8 m, joint uncertainties at 8° and 10°, correlation at 0.2, and sensor noise at 4 cm, regardless of the exploratory sliders. This is a virtual measurement-design exercise, not a dynamic robot controller.</p>
+<div class="commands"><button id="measure" class="primary">Take selected measurement</button><button id="verify-mission">Verify design</button><button id="restart-mission">Reset measurements</button></div>
+<p id="mission-state" class="status" aria-live="polite"></p><p id="mission-result" aria-live="polite"></p>
+</section><section class="panel full"><h2>The calculation</h2><p>p = f(q) · Σp ≈ JΣqJᵀ · measurement update: P′ = P − Phᵀ(hPhᵀ+R)⁻¹hP</p><div class="matrices"><div><strong>Jacobian J</strong><pre id="J"></pre></div><div><strong>Joint covariance Σq (rad²)</strong><pre id="Q"></pre></div><div><strong>Tip covariance Σp (m²)</strong><pre id="P"></pre></div><div><strong>After measurement P′ (m²)</strong><pre id="U"></pre></div></div></section></div>
 <p class="notes"><a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/ROBOTICS.md">Model notes</a> · <a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/robotics_math.test.mjs">Tests</a></p>
 </main>
 <script id="math-core">
 "use strict";
 const RobotMath=(()=>{
 const rad=Math.PI/180;
+function condition(P,axis="x",noise=0.04) {
+ const h=axis==="x"?0:axis==="y"?1:-1;if(h<0||!(noise>0))throw Error("Invalid observation");
+ const S=P[h][h]+noise*noise;
+ const U=P.map((row,i)=>row.map((value,j)=>value-P[i][h]*P[h][j]/S));
+ U[1][0]=U[0][1]=(U[1][0]+U[0][1])/2;return U;
+}
 function calc(o={}){
 const v=Object.assign({q1:30,q2:60,l1:1,l2:0.8,s1:6,s2:8,rho:0,noise:0.1,axis:"x"},o);
 const {q1,q2,l1,l2,s1,s2,rho,noise,axis}=v;
@@ -30,13 +40,24 @@ const Q=[[as*as,rho*as*bs],[rho*as*bs,bs*bs]];
 const mm=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((t,x,k)=>t+x*B[k][j],0)));
 const trans=A=>A[0].map((_,j)=>A.map(r=>r[j]));
 const P=mm(mm(J,Q),trans(J));
-const h=axis==="x"?0:1,R=noise*noise,S=P[h][h]+R;
-const U=P.map((row,i)=>row.map((val,j)=>val-P[i][h]*P[h][j]/S));
-U[1][0]=U[0][1]=(U[1][0]+U[0][1])/2;
+const U=condition(P,axis,noise);
 function eig(A){const x=A[0][0],y=(A[0][1]+A[1][0])/2,z=A[1][1],d=Math.sqrt(Math.max(0,(x-z)**2+4*y*y));return {major:Math.sqrt(Math.max(0,(x+z+d)/2)),minor:Math.sqrt(Math.max(0,(x+z-d)/2)),angle:Math.atan2(2*y,x-z)/2,area:Math.PI*Math.sqrt(Math.max(0,x*z-y*y))};}
 return{joint,tip,J,Q,P,U,prior:eig(P),posterior:eig(U),detJ:J[0][0]*J[1][1]-J[0][1]*J[1][0]};
 }
-return{calc};
+function mission(q1,q2,measurements=[]) {
+ if(!Array.isArray(measurements)||measurements.length>2||measurements.some(a=>a!=="x"&&a!=="y"))throw Error("At most two x/y measurements.");
+ const constants={l1:1,l2:0.8,s1:8,s2:10,rho:0.2,noise:0.04};
+ const goal=calc({...constants,q1:35,q2:70}).tip;
+ const m=calc({...constants,q1,q2});
+ let P=m.P;
+ for(const axis of measurements) P=condition(P,axis,constants.noise);
+ const eig=(A)=>{const a=A[0][0],b=A[0][1],c=A[1][1];return Math.sqrt(Math.max(0,(a+c+Math.hypot(a-c,2*b))/2));};
+ const distance=Math.hypot(m.tip[0]-goal[0],m.tip[1]-goal[1]);
+ const major=eig(P);
+ return{goal,tip:m.tip,distance,major,measurements:measurements.slice(),P,posePass:distance<=0.09,uncertaintyPass:major<=0.06,
+   success:distance<=0.09&&major<=0.06};
+}
+return{calc,condition,mission};
 })();
 </script><script>
 "use strict";
@@ -52,6 +73,11 @@ const controls=[["q1","Joint 1 angle","°",-180,180,1],["q2","Joint 2 angle","°
 let progress={};try{const v=JSON.parse(localStorage.getItem("tacit-robotics-v1"));if(v&&typeof v==="object"&&!Array.isArray(v))progress=v;}catch{}
 let current=0,settings={...standard};
 const fmt=x=>Number(x.toPrecision(4)).toString();
+let missionMeasurements=[];
+const missionProgress=()=>{const m=core.mission(settings.q1,settings.q2,missionMeasurements);
+$("mission-state").textContent="Target: ("+m.goal.map(fmt).join(", ")+") m · actual tip: ("+m.tip.map(fmt).join(", ")+") m · position error: "+fmt(100*m.distance)+" cm / 9 cm · largest 1σ: "+fmt(100*m.major)+" cm / 6 cm · measurements: "+(missionMeasurements.join(" → ")||"none")+" ("+missionMeasurements.length+"/2).";
+return m;};
+function restartMission(){missionMeasurements=[];$("mission-result").textContent="";missionProgress();}
 const matr=A=>A.map(row=>"[ "+row.map(x=>fmt(x).padStart(10)).join(", ")+" ]").join("\n");
 function setSvg(el,x,y){$(el).setAttribute("cx",x);$(el).setAttribute("cy",y);}
 function draw(){
@@ -61,7 +87,7 @@ setSvg("joint",X(m.joint[0]),Y(m.joint[1]));setSvg("tip",X(m.tip[0]),Y(m.tip[1])
 for(const [id,e] of [["before",m.prior],["after",m.posterior]]){$(id).setAttribute("cx",X(m.tip[0]));$(id).setAttribute("cy",Y(m.tip[1]));$(id).setAttribute("rx",e.major*188);$(id).setAttribute("ry",e.minor*188);$(id).setAttribute("transform","rotate("+(-e.angle*180/Math.PI)+" "+X(m.tip[0])+" "+Y(m.tip[1])+")");}
 $("J").textContent=matr(m.J);$("Q").textContent=matr(m.Q);$("P").textContent=matr(m.P);$("U").textContent=matr(m.U);
 $("metrics").textContent="Tip ("+fmt(m.tip[0])+", "+fmt(m.tip[1])+") m · det J "+fmt(m.detJ)+" · ellipse area "+fmt(m.prior.area)+" → "+fmt(m.posterior.area)+" m²";
-return m;}
+missionProgress();return m;}
 function list(){$("problems").replaceChildren();problems.forEach((p,i)=>{const li=document.createElement("li"),a=document.createElement("a");a.href="#"+p.id;a.textContent=p.title;if(i===current)a.className="selected";li.append(a);if(progress[p.id]){const s=document.createElement("span");s.className="done";s.textContent=" ✓";li.append(s)}$("problems").append(li);});}
 function reset(){const p=problems[current];settings={...standard,...p.seed};$("title").textContent=p.title;$("prompt").textContent=p.ask;
 $("answer").replaceChildren();for(const [value,txt] of p.opts){const o=document.createElement("option");o.value=value;o.textContent=txt;$("answer").append(o);}$("answer").selectedIndex=-1;
@@ -71,6 +97,7 @@ $("axis").value=settings.axis;list();draw();}
 function grade(){
 const v=$("answer").value;if(!v){$("feedback").className="status bad";$("feedback").textContent="Make a prediction first.";return;}
 const p=problems[current],m=draw();let expected;
+if(p.id==="area"&&m.prior.area<1e-12){$("feedback").className="status bad";$("feedback").textContent="The ellipse has zero area in this configuration. The area ratio is undefined; restore nonzero joint uncertainty and a nonsingular pose.";return;}
 if(p.id==="area"){const doubled=core.calc({...settings,s2:settings.s2*2});const ratio=m.prior.area>1e-12?doubled.prior.area/m.prior.area:NaN;expected=Math.abs(ratio-2)<1e-7?"2":Math.abs(ratio-1)<1e-7?"1":Math.abs(ratio-4)<1e-7?"4":"unknown";}
 else if(p.id==="singularity")expected=Math.abs(m.detJ)<1e-8?"no":"yes";
 else if(p.id==="sensor"){const other=settings.axis==="x"?1:0;expected=m.U[other][other]<m.P[other][other]-1e-13?"yes":"no";}
@@ -78,9 +105,12 @@ else {const base=core.calc({...settings,rho:0});expected=m.prior.area>base.prior
 const correct=v===expected;$("feedback").className="status "+(correct?"good":"bad");$("feedback").textContent=correct?"Correct.":"Try again. Change the parameters or open the reference.";
 if(correct){progress[p.id]=true;try{localStorage.setItem("tacit-robotics-v1",JSON.stringify(progress));}catch{}list();}
 }
-for(const [key,label,unit,min,max,step] of controls){const l=document.createElement("label");l.textContent=label;const o=document.createElement("output");o.id=key+"-out";l.append(o);const el=document.createElement("input");el.type="range";el.id=key;el.min=min;el.max=max;el.step=step;el.addEventListener("input",()=>{settings[key]=Number(el.value);o.textContent=el.value+unit;$("feedback").textContent="";draw();});l.append(el);$("controls").append(l);}
+for(const [key,label,unit,min,max,step] of controls){const l=document.createElement("label");l.textContent=label;const o=document.createElement("output");o.id=key+"-out";l.append(o);const el=document.createElement("input");el.type="range";el.id=key;el.min=min;el.max=max;el.step=step;el.addEventListener("input",()=>{settings[key]=Number(el.value);o.textContent=el.value+unit;$("feedback").textContent="";if(key==="q1"||key==="q2")restartMission();draw();});l.append(el);$("controls").append(l);}
 $("axis").addEventListener("change",()=>{settings.axis=$("axis").value;if(problems[current].id==="sensor")$("prompt").textContent="At this pose, does observing "+settings.axis+" with a noisy sensor also reduce uncertainty in "+(settings.axis==="x"?"y":"x")+"?";$("feedback").textContent="";draw();});
 $("check").onclick=grade;$("reset").onclick=reset;$("reference").onclick=()=>{$("help").textContent=problems[current].ref;$("help").classList.toggle("hidden");};
+$("measure").onclick=()=>{if(missionMeasurements.length===2){$("mission-result").className="status bad";$("mission-result").textContent="The two-measurement budget is exhausted. Reset measurements to try another plan.";return;}missionMeasurements.push(settings.axis);$("mission-result").textContent="";missionProgress();};
+$("verify-mission").onclick=()=>{const m=missionProgress();$("mission-result").className="status "+(m.success?"good":"bad");$("mission-result").textContent=m.success?"PASS: position and uncertainty specifications both satisfied within the two-observation budget.":"FAIL: "+(!m.posePass?"Move the arm closer to the target. ":"")+(!m.uncertaintyPass?"Use the remaining measurement budget to reduce uncertainty.":"");};
+$("restart-mission").onclick=restartMission;
 function route(){const id=location.hash.slice(1),i=problems.findIndex(p=>p.id===id);current=i<0?0:i;reset();}
 window.addEventListener("hashchange",route);route();
 </script></body></html>
