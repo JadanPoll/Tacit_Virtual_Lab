@@ -11,3 +11,20 @@ test("200 PSD and covariance-reduction scenarios",()=>{for(let i=0;i<200;i++){co
 test("Ellipse area scales with joint standard deviation",()=>{for(let i=0;i<60;i++){const d={q1:i*5,q2:15+i*2,s1:6,s2:8,rho:0.3};const a=M.calc(d).prior.area,b=M.calc({...d,s2:16}).prior.area;assert.ok(Math.abs(b/a-2)<1e-6);}});
 test("Fully extended arm is singular",()=>{for(const q1 of [-90,0,45,135])assert.ok(Math.abs(M.calc({q1,q2:0}).detJ)<1e-12);});
 test("Reject physically invalid input",()=>{for(const v of [{l1:-1},{rho:2},{noise:0},{axis:"z"}])assert.throws(()=>M.calc(v));});
+
+test("Virtual mission requires both a reachable pose and an uncertainty-reducing measurement plan",()=>{
+ const target=M.mission(35,70,["x","y"]);
+ assert.ok(target.success&&target.posePass&&target.uncertaintyPass);
+ assert.ok(target.major<=0.06&&target.distance<1e-9);
+ const unknown=M.mission(35,70,[]);
+ assert.equal(unknown.posePass,true);
+ assert.equal(unknown.uncertaintyPass,false);
+ assert.equal(M.mission(35,70,["x"]).success,false,"one x measurement does not satisfy this target");
+ assert.equal(M.mission(35,70,["x","x"]).success,false,"repeating x is not a valid shortcut");
+ assert.equal(M.mission(0,0,["x","y"]).posePass,false);
+ assert.throws(()=>M.mission(35,70,["x","x","y"]),/At most two/);
+});
+test("Posterior covariance is independent of measurement order for linear-Gaussian model",()=>{
+ const a=M.mission(35,70,["x","y"]),b=M.mission(35,70,["y","x"]);
+ for(let i=0;i<2;i++)for(let j=0;j<2;j++)assert.ok(Math.abs(a.P[i][j]-b.P[i][j])<1e-12);
+});
