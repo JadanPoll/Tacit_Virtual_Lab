@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - "models/**"
+      - "robotics.html"
       - ".github/workflows/a40-model.yml"
   pull_request:
     paths:
@@ -20,6 +21,10 @@ jobs:
         run: python3 models/test_a40.py
       - name: Virtual GPU kernel transaction and correctness tests
         run: node models/gpu-virtual.test.cjs
+      - name: Virtual lock scheduler exhaustive tests
+        run: node models/lock-lab.test.cjs
+      - name: Robotics mathematics and mission acceptance tests
+        run: node --test models/robotics_math.test.mjs
       - name: Sanitizer smoke with multiple SMs and warps
         run: |
           gcc -O1 -g -std=c11 -fsanitize=address,undefined -fno-omit-frame-pointer models/a40_model.c -lm -o models/a40_san
