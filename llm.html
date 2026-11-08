@@ -1,112 +1,92 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LLM systems · Tacit Virtual Lab</title>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM internals · Tacit Virtual Lab</title>
 <style>
-:root{font:15px/1.47 system-ui,-apple-system,sans-serif;color:#18283c;background:#f8fafc}*{box-sizing:border-box}body{margin:0}header{background:white;border-bottom:1px solid #dce3eb}header>div{max-width:1030px;margin:auto;padding:18px}main{max-width:1030px;margin:auto;padding:20px 17px 65px}h1{font-size:28px;margin:5px 0}h2{font-size:19px;margin:5px 0 9px}h3{font-size:16px;margin:10px 0 3px}p{margin:8px 0 13px}a{color:#155c9e}.muted{color:#647589}.kicker{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#376a97;font-weight:750}.section{margin:0 0 22px}.section ul{padding-left:22px;margin:4px 0;columns:2;column-gap:34px}.section li{break-inside:avoid;padding:2px 0;line-height:1.6}.done{font-size:12px;color:#258653;margin-left:7px}.surface{border:1px solid #dce3eb;background:white;border-radius:9px;padding:16px}.grid{display:grid;grid-template-columns:1fr 1.1fr;gap:14px}label{font-size:13px;font-weight:650;display:block;margin:11px 0}label select,label input[type=number],label input[type=range]{display:block;width:100%;margin:5px 0 0;font:inherit}select,input[type=number]{border:1px solid #bacbd9;border-radius:6px;padding:8px;background:white}input[type=range]{accent-color:#256eae}.control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}button{font:inherit;border-radius:7px;border:1px solid #b9c8d6;background:white;padding:9px 12px;cursor:pointer}button:hover{border-color:#225f94}button.main{background:#165fa5;border-color:#165fa5;color:white}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.hidden{display:none!important}#evidence{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.75 ui-monospace,Consolas,monospace;background:#f1f5f9;padding:13px;border-radius:8px;min-height:150px;margin:7px 0}#bars .bar{display:grid;grid-template-columns:72px 1fr 57px;gap:10px;align-items:center;margin:7px 0;font-size:12px}#bars .track{height:13px;background:#e9eff5;border-radius:3px;overflow:hidden}#bars .fill{height:100%;background:#437eaf}.feedback{border-left:4px solid #4480af;background:#eff5fb;padding:9px 11px;margin:8px 0}.feedback.pass{border-color:#238353;background:#e9f7ee}.feedback.fail{border-color:#bd823b;background:#fff5e6}.fine{color:#62748a;font-size:12px}.sources{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}#back{display:inline-block;margin-bottom:10px}@media(max-width:720px){.grid{grid-template-columns:1fr}.section ul{columns:1}}
-</style></head><body><header><div><div class="kicker">FKEN · Tacit Virtual Lab</div><h1>LLM systems · Problem sets</h1><p class="muted">Make a prediction, change a parameter, and inspect the calculation.</p></div></header><main>
-<div class="sources"><a href="index.html">All problem sets</a><a href="https://poloclub.github.io/transformer-explainer/">Transformer Explainer · live GPT-2</a></div>
-<section id="catalog" style="margin-top:19px"><h2>Choose a problem</h2><div id="groups"></div></section>
-<section id="exercise" class="hidden" style="margin-top:18px"><a id="back" href="llm.html">← All LLM problems</a><div class="grid">
-<div class="surface"><div class="kicker" id="position"></div><h2 id="title"></h2><p id="question"></p><label>Your prediction<select id="guess"></select></label><div class="actions"><button id="check" class="main">Check prediction</button><button id="run">Run calculation</button><button id="reset">Reset</button><button id="help-button">Hint</button></div><div id="feedback" aria-live="polite"></div><div id="help" class="feedback hidden"></div><h3>Change the inputs</h3><div class="control-grid" id="controls"></div></div>
-<div class="surface"><h2>Inside the model</h2><div id="bars"></div><pre id="evidence">Run the calculation to inspect the values.</pre></div></div>
-<p class="fine"><a href="models/LLM.md">Model notes</a> · <a href="models/llm_math.test.mjs">Tests</a> · <a href="models/llm-core.js">Math source</a></p></section></main>
-<script src="models/llm-core.js"></script>
-<script>
+:root{font:15px/1.5 system-ui,-apple-system,sans-serif;background:#f8fafc;color:#18293a}*{box-sizing:border-box}body{margin:0}header{border-bottom:1px solid #d9e1ea;background:white}header>div,main{max-width:1060px;margin:auto;padding:19px}h1{font-size:28px;margin:3px 0 8px}h2{font-size:19px;margin:2px 0 12px}h3{font-size:15px;margin:8px 0 5px}p{margin:8px 0 12px}a{color:#1b5b97}.sub{font-size:13px;color:#5d6a7a}.topline{font-size:12px;letter-spacing:.08em;font-weight:700;color:#3b668b}.grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:14px}.panel{border:1px solid #d9e3ed;border-radius:9px;padding:16px;background:white;min-width:0}.wide{grid-column:1/-1}.problems{columns:2;column-gap:28px;padding-left:24px;margin:4px 0}.problems li{break-inside:avoid;padding:3px 0}.done{color:#168057;margin-left:6px}.active{font-weight:700}.line{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;align-items:center}.line button{padding:9px 12px;background:white;border:1px solid #bbcbd9;border-radius:6px;font:inherit;cursor:pointer}.line button.primary{background:#1668ad;border-color:#1668ad;color:white}.line button:disabled{opacity:.5;cursor:default}.line button:hover:not(:disabled){border-color:#1668ad}.muted{color:#66788c}.status{font:13px/1.55 ui-monospace,Consolas,monospace;background:#eef4f9;padding:10px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}pre{font:12px/1.6 ui-monospace,Consolas,monospace;background:#f1f5f9;padding:10px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0}.hidden{display:none!important}textarea{width:100%;min-height:218px;font:13px/1.5 ui-monospace,Consolas,monospace;border:1px solid #bdcbd7;border-radius:7px;padding:11px;resize:vertical;background:#fbfdff;color:#122a40}textarea:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid #c18b24;outline-offset:2px}#message{white-space:pre-wrap;overflow-wrap:anywhere;border-left:3px solid #6a95b5;background:#edf4fa;padding:10px;margin:6px 0}#message.pass{border-color:#21845b;background:#e9f7f0}#message.fail{border-color:#b77930;background:#fff4e5}details{margin:9px 0;font-size:13px}summary{cursor:pointer}#dataset{min-height:90px;margin:7px 0}#example{min-height:130px}#editors{margin-top:14px}.info{font-size:12px;color:#5f7080}.next{margin-top:15px}@media(max-width:760px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}.problems{columns:1}}
+</style></head><body><header><div><div class="topline">FKEN · Tacit Virtual Lab</div><h1>LLM internals</h1><p class="sub">Implement components, test them against a working GPT, and inspect the model's calculations.</p></div></header>
+<main><p class="sub"><a href="index.html">All problem sets</a> · <a href="https://kylemath.github.io/microgptJS/">Explore and train the full model</a></p>
+<section class="panel"><h2>Problems</h2><ul class="problems" id="problems">
+<li><a href="#attention">Implement a scaled attention head</a></li><li><a href="#gradient">Compute the cross-entropy gradient</a></li><li><a href="#distribution">Implement temperature and top-k decoding</a></li>
+</ul></section>
+<div class="grid" style="margin-top:14px">
+<section class="panel"><h2>Working GPT</h2><p>Training a character-level model with embeddings, multi-head attention, backpropagation, and Adam.</p>
+<div class="line"><button id="reset-model">Reset model</button><button id="train" class="primary">Train 10 steps</button><button id="generate">Generate</button></div>
+<div id="model-status" class="status">Initializing model…</div>
+<details><summary>Change training examples</summary><textarea id="dataset" spellcheck="false" aria-label="Training examples">ada
+ava
+ana
+ida
+ala
+ava
+ana
+ada</textarea></details>
+<h3>Training and generation</h3><pre id="output">—</pre>
+</section>
+<section class="panel"><h2>Inspect a model step</h2><p class="sub">Numbers from a real transformer head at a training position.</p><pre id="trace">Initializing model…</pre></section>
+<section id="editors" class="panel wide hidden">
+<h2 id="problem-title"></h2><p id="task"></p>
+<h3>Your function</h3><textarea id="solution" aria-label="JavaScript solution" spellcheck="false"></textarea>
+<div class="line"><button id="check" class="primary">Run tests</button><button id="restore">Restore starter</button><button id="hint">Hint</button><a href="llm.html" style="margin-left:auto">All LLM problems</a></div>
+<div id="message" aria-live="polite"></div>
+<details id="hint-panel" class="hidden"><summary>Hint</summary><p id="hint-text"></p></details>
+<p class="info">Checks include the current model's values and additional inputs. Code is run separately from the page.</p>
+</section></div>
+<p class="info next"><a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/LLM.md">Model notes and sources</a> · <a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/vendor/LICENSE">microGPT.js license</a></p>
+</main><script>
 "use strict";
-const $=id=>document.getElementById(id);
-const problems=[
-{id:"bpe",group:"Tokens & context",name:"Merge rules and token count",type:"bpe",ask:"How many tokens remain after applying these ranked merge rules to 'lower'?",opts:["1","2","3","4","5"],vars:[["merges","Enabled merge rules",0,4,1]],start:{merges:3},hint:"Byte-pair encoding merges the highest-ranked adjacent pair available."},
-{id:"window",group:"Tokens & context",name:"What fits in context?",type:"window",ask:"Which token is the first still present after keeping the last N tokens?",opts:["BOS","the","quick","brown","fox","jumps"],vars:[["limit","Context limit",1,6,1]],start:{limit:4},hint:"A sliding context retains a suffix of the prompt."},
-{id:"mask",group:"Attention",name:"Causal masking",type:"mask",ask:"Can the query at this position attend to token D?",opts:["Yes","No"],vars:[["position","Query index (0–3)",0,3,1]],start:{position:1},hint:"In causal attention, a token can attend to itself and earlier tokens, never later ones."},
-{id:"max",group:"Attention",name:"Which token gets the most attention?",type:"max",ask:"Which token gets the largest attention weight?",opts:["A","B","C","D"],vars:[["position","Query index (0–3)",0,3,1],["temp","Attention temperature",0.25,2,0.25]],start:{position:2,temp:1},hint:"Compute scaled Q·K scores, mask future positions, and apply softmax."},
-{id:"mix",group:"Attention",name:"Weighted value vectors",type:"mix",ask:"Is the attention result exactly one of the input value vectors?",opts:["Yes","No"],vars:[["position","Query index (0–3)",0,3,1],["temp","Attention temperature",0.25,2,0.25]],start:{position:2,temp:1},hint:"Attention outputs a weighted sum of value vectors."},
-{id:"gradient",group:"Training",name:"Direction of an SGD update",type:"gradient",ask:"Will this gradient-descent step increase or decrease the weight?",opts:["Increase","Decrease","Unchanged"],vars:[["w","Weight",-2,2,0.25],["target","Target class",0,1,1]],start:{w:0.5,target:1},hint:"For logistic loss, dL/dw=(sigmoid(wx)-y)x. Gradient descent subtracts the gradient."},
-{id:"train",group:"Training",name:"Loss before and after one update",type:"train",ask:"Does this SGD step decrease loss on the training example?",opts:["Yes","No"],vars:[["lr","Learning rate",0.05,0.75,0.05],["target","Target class",0,1,1]],start:{lr:0.3,target:1},hint:"Compute the loss before and after subtracting the gradient times the learning rate."},
-{id:"temperature",group:"Decoding",name:"Temperature and entropy",type:"temperature",ask:"Compared with temperature 1, does this temperature make the output distribution's entropy higher or lower?",opts:["Higher","Lower","Same"],vars:[["temp","Sampling temperature",0.5,2,0.25]],start:{temp:1.5},hint:"Temperature divides logits before softmax. Higher temperature spreads probability mass."},
-{id:"topk",group:"Decoding",name:"Top-k candidate set",type:"topk",ask:"How many next-token candidates have nonzero probability?",opts:["1","2","3","4"],vars:[["k","Top-k",1,4,1]],start:{k:2},hint:"Top-k masks all but the k highest-logit tokens."},
-{id:"sample",group:"Decoding",name:"Predict the sampled token",type:"sample",ask:"Which token will this fixed uniform draw select from the cumulative probability distribution?",opts:["NEXT","STOP","MORE","DONE"],vars:[["k","Top-k",1,4,1],["u","Random draw u",0,0.95,0.05]],start:{k:3,u:0.55},hint:"Accumulate token probabilities in vocabulary order until the cumulative value exceeds u."},
-{id:"cache-same",group:"Serving & memory",name:"KV caching and numerical output",type:"cache-same",ask:"With the same prefix and weights, does caching K and V change the attention result?",opts:["Yes","No"],vars:[["position","Prefix length",1,4,1]],start:{position:3},hint:"Storing earlier keys and values changes repeated computation, not the attention result."},
-{id:"cache-work",group:"Serving & memory",name:"Recomputation vs cached decoding",type:"cache-work",ask:"Which strategy performs more query-key dot products over these incremental prefixes?",opts:["Recompute full prefix","Reuse cached K/V","Same"],vars:[["n","Number of tokens",2,12,1]],start:{n:5},hint:"Full-prefix reruns repeat earlier attention rows; a KV cache computes only the new row."},
-{id:"kv",group:"Serving & memory",name:"KV memory budget",type:"kv",ask:"If the sequence length doubles, how does the raw KV cache size change?",opts:["Doubles","Quadruples","Unchanged"],vars:[["batch","Batch size",1,8,1],["seq","Sequence length",4,64,4]],start:{batch:2,seq:16},hint:"Each stored token contributes a key vector and a value vector for each layer and head."},
-{id:"quant",group:"Serving & memory",name:"Bitwidth, size and rounding error",type:"quant",ask:"How many raw bytes are needed for these eight weights?",opts:["4","8","12","16"],vars:[["bits","Bits per weight",4,16,4]],start:{bits:4},hint:"Raw packed size = number of weights × bitwidth / 8. Actual formats may add scale metadata."},
-{id:"retrieve",group:"Retrieval",name:"Nearest document by cosine similarity",type:"retrieve",ask:"Which stored document is most similar to the query vector?",opts:["alpha","beta","gamma"],vars:[["x","Query x",0.1,2,0.1],["y","Query y",0.1,2,0.1]],start:{x:1,y:0.4},hint:"Cosine similarity is (q·d)/(||q||·||d||); the highest score wins."}
+const $=id=>document.getElementById(id),KEY="tacit-llm-code-v2";
+const tasks=[
+{id:"attention",name:"Implement a scaled attention head",description:"Given the query vector and the key/value history from one attention head, implement scaled dot-product attention. Return both the normalized weights and the weighted output. The grader uses actual head activations from the model.",starter:"function solve(q, keys, values) {\n  // Return {weights: number[], output: number[]}\n  return {weights: [], output: []};\n}",hint:"Compute a score for every key using dot(q,k)/sqrt(head dimension); subtract the largest score before exponentiating; normalize and use the weights to average the values."},
+{id:"gradient",name:"Compute the cross-entropy gradient",description:"Given the actual next-token logits and the correct token index, return the gradient of cross-entropy with respect to every logit.",starter:"function solve(logits, target) {\n  // Return one derivative per logit.\n  return [];\n}",hint:"For softmax cross-entropy, the gradient is softmax(logits) minus the one-hot target. A stable implementation first subtracts the largest logit."},
+{id:"distribution",name:"Implement temperature and top-k decoding",description:"Transform the model's output logits into a normalized probability distribution, applying temperature and retaining only the top k candidates. Return one probability per vocabulary item.",starter:"function solve(logits, temperature, k) {\n  // Return a probability for each vocabulary entry.\n  return [];\n}",hint:"Keep the indices of the k largest logits, divide their scores by temperature, apply stable softmax across those candidates, and set the remaining probabilities to zero."}
 ];
-let progress={};try{const p=JSON.parse(localStorage.getItem("tacit-llm-v1"));if(p&&typeof p==="object"&&!Array.isArray(p))progress=p;}catch{}
-let selected=null,state={};
-const fmt=n=>Number(n.toFixed(5)).toString();
-function calculate(ex,s){
- let r,answer,bars=[],text="";
- switch(ex.type){
- case"bpe":r=LLMCore.bpe("lower",s.merges);answer=String(r.parts.length);text=["Input: l | o | w | e | r","Merge trace:",...r.history.map((x,i)=>"  "+i+": "+x),"Final tokens: "+r.parts.length].join("\n");break;
- case"window":r=LLMCore.context(s.limit);answer=r.kept[0];text=["Prompt: "+r.all.join(" · "),"Retained: "+r.kept.join(" · "),"Dropped: "+(r.all.length-r.kept.length)].join("\n");break;
- case"mask":r=LLMCore.attention(LLMCore.input,s.position);answer=s.position>=3?"Yes":"No";bars=LLMCore.input.map((name,i)=>({name,weight:r.weights[i]}));text=["Query: "+LLMCore.input[s.position],"Masked scores: "+r.scores.map(x=>Number.isFinite(x)?fmt(x):"−∞").join(", "),"Weights: "+r.weights.map(fmt).join(", ")].join("\n");break;
- case"max":case"mix":
- r=LLMCore.attention(LLMCore.input,s.position,s.temp);bars=LLMCore.input.map((name,i)=>({name,weight:r.weights[i]}));
- answer=ex.type==="max"?LLMCore.input[r.weights.indexOf(Math.max(...r.weights))]:(LLMCore.input.some(t=>{const v=LLMCore.attention([t]).mixed;return Math.hypot(...r.mixed.map((x,i)=>x-v[i]))<1e-9;})?"Yes":"No");
- text=["Query: "+LLMCore.input[s.position],"Scaled scores: "+r.scores.map(x=>Number.isFinite(x)?fmt(x):"−∞").join(" · "),"Attention: "+r.weights.map(fmt).join(" · "),"Mixed value: ["+r.mixed.map(fmt).join(", ")+"]","Next-token logits: ["+r.logits.map(fmt).join(", ")+"]"].join("\n");break;
- case"gradient":case"train":
- r=LLMCore.sgd(s.w??0.5,1.5,s.target,s.lr??0.3);
- answer=ex.type==="gradient"?(Math.abs(r.nextW-(s.w??0.5))<1e-12?"Unchanged":r.nextW>(s.w??0.5)?"Increase":"Decrease"):(r.after<r.before?"Yes":"No");
- text=["P(target=1): "+fmt(r.p),"dLoss/dWeight: "+fmt(r.gradient),"Weight: "+fmt(s.w??0.5)+" → "+fmt(r.nextW),"Loss: "+fmt(r.before)+" → "+fmt(r.after)].join("\n");break;
- case"temperature":
- r=LLMCore.decode(s.temp,4);const baseline=LLMCore.decode(1,4);
- answer=Math.abs(r.entropy-baseline.entropy)<1e-9?"Same":r.entropy>baseline.entropy?"Higher":"Lower";
- bars=LLMCore.vocab.map((name,i)=>({name,weight:r.p[i]}));
- text=["Entropy at T=1: "+fmt(baseline.entropy),"Entropy at T="+s.temp+": "+fmt(r.entropy),"Probabilities: "+r.p.map(fmt).join(" · ")].join("\n");break;
- case"topk":case"sample":
- r=LLMCore.decode(1,s.k,s.u??0.55);answer=ex.type==="topk"?String(r.supported):r.chosen;
- bars=LLMCore.vocab.map((name,i)=>({name,weight:r.p[i]}));
- text=["Next-token logits: "+r.logits.map(fmt).join(" · "),"After top-k: "+r.p.map(fmt).join(" · "),"Draw u: "+fmt(s.u??0.55),"Selected: "+r.chosen].join("\n");break;
- case"cache-same":
- r=LLMCore.attention(LLMCore.input.slice(0,s.position));const c=LLMCore.cached(LLMCore.input.slice(0,s.position)).at(-1);
- const delta=Math.max(...r.mixed.map((v,i)=>Math.abs(v-c.mixed[i])));
- answer=delta<1e-12?"No":"Yes";bars=r.prefix.map((name,i)=>({name,weight:r.weights[i]}));
- text=["Uncached output: ["+r.mixed.map(fmt).join(", ")+"]","Cached output: ["+c.mixed.map(fmt).join(", ")+"]","Maximum difference: "+fmt(delta)].join("\n");break;
- case"cache-work":
- r=LLMCore.work(s.n);answer=r.rerun>r.cache?"Recompute full prefix":r.rerun<r.cache?"Reuse cached K/V":"Same";
- text=["Tokens: "+s.n,"Full-prefix dot products: "+r.rerun,"KV-cached dot products: "+r.cache,"Ratio: "+fmt(r.rerun/r.cache)+"×"].join("\n");break;
- case"kv":
- r=LLMCore.kvBytes(s.batch,4,2,8,s.seq,16)/1024;
- const doubled=LLMCore.kvBytes(s.batch,4,2,8,s.seq*2,16)/1024,ratio=doubled/r;
- answer=ratio===2?"Doubles":ratio===4?"Quadruples":"Unchanged";
- text=["Batch: "+s.batch,"Layers: 4 · Heads: 2 · Head dim: 8","Context: "+s.seq+" · Value precision: 16 bits","KV cache: "+fmt(r)+" KiB","At twice the context: "+fmt(doubled)+" KiB"].join("\n");break;
- case"quant":
- r=LLMCore.quant(s.bits);answer=String(r.bytes);
- text=["Bits per weight: "+s.bits,"Source weights: "+r.source.join(" · "),"Rounded weights: "+r.q.map(fmt).join(" · "),"Mean squared error: "+fmt(r.mse),"Raw storage: "+r.bytes+" bytes"].join("\n");break;
- case"retrieve":
- r=LLMCore.retrieve(s.x,s.y);answer=r.winner;bars=r.ranked.map(d=>({name:d.name,weight:d.score}));
- text=["Query: ["+s.x+", "+s.y+"]",...r.ranked.map(d=>d.name+" similarity: "+fmt(d.score)),"Selected: "+r.winner].join("\n");break;
- default:throw Error("Unknown exercise "+ex.type);
- }
- return{answer,text,bars};
+let selected=null,trace=null,busy=false,gradeWorker=null,gradeTimeout=null,engine=null;
+let progress={};try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&typeof x==="object")progress=x;}catch{}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(progress));}catch{}}
+function report(el,t){$(el).textContent=t;}
+function list(){const list=$("problems");list.replaceChildren();for(const t of tasks){const li=document.createElement("li"),a=document.createElement("a");a.href="#"+t.id;a.textContent=t.name;if(selected===t)a.className="active";li.append(a);if(progress[t.id]?.complete){const s=document.createElement("span");s.className="done";s.textContent="✓";li.append(s);}list.append(li);}}
+function route(){const id=decodeURIComponent(location.hash.slice(1)),t=tasks.find(x=>x.id===id)||null;selected=t;list();$("editors").classList.toggle("hidden",!t);if(!t)return;
+ report("problem-title",t.name);report("task",t.description);$("solution").value=progress[t.id]?.code??t.starter;report("message","Write your function, then run the tests.");$("message").className="";$("hint-panel").classList.add("hidden");}
+function markBusy(on){busy=on;for(const id of ["reset-model","train","generate"])$(id).disabled=on;}
+function showState(data){
+ trace=data;markBusy(false);
+ report("model-status","Training step "+data.step+" · "+data.parameters+" parameters · "+data.vocab.length+" token IDs\nMost recent loss: "+data.loss.toFixed(4));
+ const q=data.head;
+ report("trace","Training example: "+data.doc+" · position "+data.position+"\nQuery: "+q.q.map(v=>v.toFixed(4)).join(", ")+"\nKeys: "+q.keys.map(row=>"["+row.map(v=>v.toFixed(4)).join(", ")+"]").join(" ")+"\nValues: "+q.values.map(row=>"["+row.map(v=>v.toFixed(4)).join(", ")+"]").join(" ")+"\nAttention weights: "+q.weights.map(v=>v.toFixed(4)).join(", ")+"\nNext-token logits: "+data.logits.map(v=>v.toFixed(4)).join(", "));
+ report("output","Recent losses: "+data.history.slice(-10).map(v=>v.toFixed(3)).join(" · ")+"\nGenerate a sample to see how the model currently behaves.");
 }
-function catalog(){
- const groups=$("groups");groups.replaceChildren();
- for(const group of [...new Set(problems.map(x=>x.group))]){const section=document.createElement("section"),title=document.createElement("h3"),list=document.createElement("ul");section.className="section";title.textContent=group;
- for(const p of problems.filter(x=>x.group===group)){const li=document.createElement("li"),a=document.createElement("a");a.href="#"+p.id;a.textContent=p.name;li.append(a);if(progress[p.id]){const s=document.createElement("span");s.className="done";s.textContent=" ✓";li.append(s);}list.append(li);}section.append(title,list);groups.append(section);}
+function resetModel(){
+ if(!engine)return;
+ markBusy(true);report("model-status","Training on the selected examples…");
+ engine.postMessage({type:"reset",dataset:$("dataset").value});
 }
-function inspect(){
- const data=calculate(selected,state);$("evidence").textContent=data.text;const bars=$("bars");bars.replaceChildren();
- for(const x of data.bars){const line=document.createElement("div"),name=document.createElement("span"),track=document.createElement("div"),fill=document.createElement("div"),n=document.createElement("span");line.className="bar";track.className="track";fill.className="fill";fill.style.width=(100*Math.max(0,Math.min(1,x.weight)))+"%";name.textContent=x.name;n.textContent=(x.weight*100).toFixed(1)+"%";track.append(fill);line.append(name,track,n);bars.append(line);}
+function newEngine(){
+ engine=new Worker("models/llm-engine-worker.js",{type:"module"});
+ engine.onmessage=({data})=>{if(data.type==="state")showState(data);else if(data.type==="generated"){markBusy(false);report("output","Generated: "+JSON.stringify(data.sample)+"\nFirst-token probabilities: "+(data.probabilities||[]).map(v=>v.toFixed(3)).join(", "));}else if(data.type==="error"){markBusy(false);report("model-status",data.message);}};
+ engine.onerror=()=>{markBusy(false);report("model-status","The model could not start. Reload the page.");};
+ resetModel();
 }
-function reset(){
- state={...selected.start};$("title").textContent=selected.name;$("question").textContent=selected.ask;$("position").textContent=selected.group+" · "+(problems.indexOf(selected)+1)+" of "+problems.length;
- const guess=$("guess");guess.replaceChildren();for(const v of selected.opts){const o=document.createElement("option");o.value=v;o.textContent=v;guess.append(o);}guess.selectedIndex=-1;
- $("feedback").className="";$("feedback").textContent="";$("help").classList.add("hidden");$("evidence").textContent="Run the calculation to inspect the values.";$("bars").replaceChildren();
- const wrap=$("controls");wrap.replaceChildren();
- for(const [key,label,min,max,step] of selected.vars){const el=document.createElement("label"),input=document.createElement("input"),val=document.createElement("span");el.textContent=label;input.type="range";input.min=min;input.max=max;input.step=step;input.value=state[key];val.className="fine";val.textContent=String(state[key]);
- input.addEventListener("input",()=>{state[key]=Number(input.value);val.textContent=String(state[key]);$("feedback").textContent="";$("evidence").textContent="Run the calculation to inspect the values.";$("bars").replaceChildren();});
- el.append(input,val);wrap.append(el);}
+function grade(){
+ if(!selected||!trace||busy)return;
+ const source=$("solution").value;progress[selected.id]={...(progress[selected.id]||{}),code:source};save();
+ if(gradeWorker){gradeWorker.terminate();gradeWorker=null;}
+ if(gradeTimeout)clearTimeout(gradeTimeout);
+ $("check").disabled=true;report("message","Checking against the model…");$("message").className="";
+ gradeWorker=new Worker("models/llm-grade-worker.js");
+ gradeTimeout=setTimeout(()=>{gradeWorker?.terminate();gradeWorker=null;$("check").disabled=false;report("message","Check exceeded the time limit. Review your loop or function.");$("message").className="fail";},2500);
+ gradeWorker.onmessage=({data})=>{
+  clearTimeout(gradeTimeout);gradeTimeout=null;gradeWorker?.terminate();gradeWorker=null;$("check").disabled=false;
+  report("message",data.message);$("message").className=data.ok?"pass":"fail";
+  if(data.ok){progress[selected.id]={code:source,complete:true};save();list();}
+ };
+ gradeWorker.onerror=()=>{clearTimeout(gradeTimeout);gradeTimeout=null;gradeWorker?.terminate();gradeWorker=null;$("check").disabled=false;report("message","The test runner could not start.");$("message").className="fail";};
+ gradeWorker.postMessage({task:selected.id,source,trace});
 }
-function route(){
- const id=decodeURIComponent(location.hash.slice(1));selected=problems.find(x=>x.id===id)||null;
- $("catalog").classList.toggle("hidden",!!selected);$("exercise").classList.toggle("hidden",!selected);
- if(selected)reset();else catalog();
-}
-$("run").onclick=inspect;
-$("check").onclick=()=>{const guess=$("guess").value;if(!guess){$("feedback").textContent="Choose an answer.";$("feedback").className="feedback fail";return;}
- const correct=calculate(selected,state).answer===guess;$("feedback").className="feedback "+(correct?"pass":"fail");$("feedback").textContent=correct?"Correct.":"Not quite. Inspect the calculation and try again.";
- if(correct){progress[selected.id]=true;try{localStorage.setItem("tacit-llm-v1",JSON.stringify(progress));}catch{}catalog();}
-};
-$("reset").onclick=reset;$("help-button").onclick=()=>{$("help").textContent=selected.hint;$("help").classList.toggle("hidden");};
-window.addEventListener("hashchange",route);route();
+$("solution").addEventListener("input",()=>{if(!selected)return;progress[selected.id]={...(progress[selected.id]||{}),code:$("solution").value,complete:false};save();list();});
+$("check").onclick=grade;$("reset-model").onclick=resetModel;
+$("train").onclick=()=>{if(!busy&&engine){markBusy(true);engine.postMessage({type:"train",steps:10});}};
+$("generate").onclick=()=>{if(!busy&&engine){markBusy(true);engine.postMessage({type:"generate",temperature:.8});}};
+$("restore").onclick=()=>{if(selected){$("solution").value=selected.starter;progress[selected.id]={code:selected.starter,complete:false};save();list();report("message","Starter restored.");}};
+$("hint").onclick=()=>{if(!selected)return;report("hint-text",selected.hint);$("hint-panel").classList.toggle("hidden");};
+window.addEventListener("hashchange",route);route();newEngine();
 </script></body></html>
