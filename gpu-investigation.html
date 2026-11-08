@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Virtual GPU kernel investigation · Tacit Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f9fc;color:#172437;font:15px/1.5 system-ui,sans-serif}
+header{background:white;border-bottom:1px solid #d8e1ec}header>div,main{max-width:1100px;margin:auto;padding:18px}
+h1{font-size:28px;margin:4px 0}h2{font-size:19px;margin:3px 0 10px}h3{font-size:16px}
+a{color:#155fac}p{margin:7px 0 12px}.muted{color:#5a6c80}.fine{font-size:13px;color:#627384}
+.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px}
+.panel{background:white;border:1px solid #dae3ed;border-radius:10px;padding:17px;min-width:0}.wide{grid-column:1/-1}
+textarea{width:100%;min-height:355px;font:13px/1.55 ui-monospace,Consolas,monospace;padding:12px;border:1px solid #aabed1;border-radius:7px;resize:vertical;background:#f9fbfe;color:#11283f}
+button{padding:9px 13px;border-radius:7px;border:1px solid #b7c7d5;background:white;color:#173550;font:inherit;cursor:pointer}
+button.primary{background:#1663a4;color:#fff;border-color:#1663a4}button:hover{border-color:#155fac}button:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}pre{font:12px/1.55 ui-monospace,Consolas,monospace;background:#edf3f8;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.metric{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e4eaf1;gap:14px}.metric strong{font-variant-numeric:tabular-nums}
+.pass{border-left:4px solid #16805b;background:#e9f7ee;padding:10px}.fail{border-left:4px solid #bc7835;background:#fff5e7;padding:10px}
+details{margin-top:12px}summary{cursor:pointer;font-weight:600}
+@media(max-width:780px){.layout{grid-template-columns:1fr}.wide{grid-column:auto}}
+</style></head><body>
+<header><div><p class="fine"><a href="index.html">Tacit Virtual Lab</a> / GPU architecture</p><h1>Make a transpose kernel efficient</h1><p class="muted">A complete, executable virtual investigation: preserve matrix correctness while changing how warps access global memory.</p></div></header>
+<main><section class="panel" style="margin-bottom:14px"><h2>Incident and objective</h2>
+<p>An existing 32×32 transpose produces the correct output, but every 32-lane warp reads widely separated addresses. Improve the kernel until it uses <strong>320 or fewer modeled 32-byte memory-sector requests</strong>, while producing the exact correct matrix on four independently generated input datasets.</p>
+<p>The baseline requests <strong>1,152 sectors</strong> (1,024 read, 128 written). The 32×32 fully coalesced tiled approach requests <strong>256</strong>. This models address grouping, not A40 execution time or CUDA synchronization. Every <code>warpLoad</code> or <code>warpStore</code> represents one 32-lane warp instruction; local arrays stand in for fast shared/local staging without accounting for bank conflicts.</p>
+</section>
+<div class="layout">
+<section class="panel"><h2>Edit the kernel</h2>
+<p class="fine">Available functions: <code>warpLoad(indices)</code> returns 32 input values, and <code>warpStore(indices, values)</code> writes 32 outputs. Indices are 32 element offsets (not byte addresses). <code>N=32</code>. You may use JavaScript arrays as a virtual tile. A store must write each output element exactly once.</p>
+<label for="source">Kernel source</label><textarea id="source" spellcheck="false" aria-label="Editable virtual kernel source"></textarea>
+<div class="actions"><button class="primary" id="run">Run and verify</button><button id="reset">Restore baseline</button><button id="reference">Show reference implementation</button></div>
+<p class="fine">The reference button replaces your editor, so copy your work first if you want to preserve it. Tests run in a disposable worker with an execution timeout.</p>
+</section>
+<section class="panel"><h2>Experiment evidence</h2>
+<p id="status" aria-live="polite">Run the baseline first. Then change the indexing or stage a tile in local memory.</p>
+<div id="metrics" hidden>
+<div class="metric"><span>Read sectors</span><strong id="read"></strong></div>
+<div class="metric"><span>Write sectors</span><strong id="write"></strong></div>
+<div class="metric"><span>Total sectors</span><strong id="total"></strong></div>
+<div class="metric"><span>32-lane memory instructions</span><strong id="instructions"></strong></div>
+<div class="metric"><span>Independent test inputs</span><strong id="tests"></strong></div>
+</div>
+<h3>Warp-level evidence</h3><pre id="trace">First warp instructions will appear here.</pre>
+<details><summary>What should I investigate?</summary>
+<p>In the baseline, the first warp's load addresses are element offsets 0, 32, 64, ... rather than consecutive offsets. That requires 32 separate 32-byte sectors for a single warp read. Stores are already coalesced. If you first load contiguous rows into a local 32×32 tile, you can transpose values locally and then write contiguous rows, keeping both global read and write instructions coalesced.</p>
+</details>
+</section>
+<section class="panel wide"><h2>Verification contract</h2>
+<p>Correctness is tested by an independent reference transpose across four deterministic but different matrices, including checking that every output location was written exactly once. The optimization is accepted only if each case is correct, there are exactly 1,024 loads and 1,024 stores, at most 64 warp memory instructions, and at most 320 requested sectors per case. Sector transactions are modeled as unique 32-byte sectors touched by the 4-byte accesses of one warp instruction; the model does not claim measured runtime speedups.</p>
+<p><a href="models/gpu-virtual-core.js">Simulation and reference oracle</a> · <a href="models/gpu-virtual.test.cjs">Regression tests</a> · <a href="models/a40_model.c">Broader A40-inspired C model</a> · <a href="models/A40_NOTES.md">Fidelity and limitations</a></p>
+</section></div>
+</main><script src="models/gpu-virtual-core.js"></script><script>
+"use strict";
+const $=id=>document.getElementById(id), src=$("source");
+let running=null,timer=null;
+src.value=GPUVirtual.baseline;
+function resetRun(){if(running){running.terminate();running=null;}clearTimeout(timer);$("run").disabled=false;}
+function show(result){
+  $("metrics").hidden=false;
+  for(const [id,key] of [["read","readSectors"],["write","writeSectors"],["total","totalSectors"],["instructions","warpInstructions"]])$(id).textContent=result[key];
+  $("tests").textContent=result.tests.filter(t=>t.correct).length+" / "+result.tests.length;
+  $("status").className=result.achieved?"pass":"fail";
+  $("status").textContent=result.achieved?"PASS: correct transpose with coalesced memory transactions.":
+    result.valid?"Correct output, but the optimization target is not yet met. Compare read and write sectors.":"FAIL: output or memory coverage differs from the independent transpose oracle.";
+  $("trace").textContent=result.trace.slice(0,8).map((t,i)=>"Instruction "+(i+1)+" "+t.op+
+    " · sectors="+t.sectors.length+" · first 8 element indices=["+t.addresses.slice(0,8).join(", ")+"]").join("\n")+
+    "\n\nValidation: "+result.tests.map(t=>"seed "+t.seed+": "+(t.correct?"correct":"incorrect ("+t.mismatches+" output errors)")).join("; ");
+}
+$("run").onclick=()=>{
+  resetRun();
+  $("status").className="";$("status").textContent="Executing virtual kernel and independent test cases…";
+  $("metrics").hidden=true;$("trace").textContent="No evidence until execution completes.";
+  const w=new Worker("models/gpu-virtual-worker.js");
+  running=w;$("run").disabled=true;
+  w.onmessage=({data})=>{if(w!==running)return;resetRun();if(data.type==="error"){$("status").className="fail";$("status").textContent="Kernel failed: "+data.message;return;}show(data);};
+  w.onerror=e=>{if(w!==running)return;resetRun();$("status").className="fail";$("status").textContent="Worker error: "+e.message;};
+  timer=setTimeout(()=>{if(w!==running)return;resetRun();$("status").className="fail";$("status").textContent="Kernel exceeded 2 seconds. Check loops or memory-instruction count.";},2000);
+  w.postMessage({source:src.value});
+};
+$("reset").onclick=()=>{resetRun();src.value=GPUVirtual.baseline;$("status").textContent="Baseline restored; run again.";$("status").className="";$("metrics").hidden=true;};
+$("reference").onclick=()=>{resetRun();src.value=GPUVirtual.tiled;$("status").textContent="Tiled reference loaded. Run it to inspect the improvement.";$("status").className="";$("metrics").hidden=true;};
+</script></body></html>
