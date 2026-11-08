@@ -1,7 +1,25 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Robot mathematics · Tacit Virtual Lab</title><style>
 *{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,-apple-system,sans-serif;color:#17293a;background:#f7f9fc}header{background:white;border-bottom:1px solid #dbe2e9}header div,main{max-width:1050px;margin:auto;padding:17px}main{padding-top:23px}h1{font-size:29px;margin:5px 0}h2{font-size:19px;margin:0 0 8px}h3{font-size:15px;margin:16px 0 7px}p{margin:7px 0 12px}a{color:#17619f}.muted{color:#5d6a7a}.tiny{color:#62748a;font-size:12px}.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:13px}.panel{background:white;border:1px solid #dce5ed;border-radius:9px;padding:16px;min-width:0}.full{grid-column:1/-1}.problems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 25px;margin:5px 0 0;padding-left:25px}.problems li{padding:3px 0}.selected{font-weight:700}.done{color:#248854;font-weight:750}.nav{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-bottom:17px}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}button{font:inherit;padding:9px 12px;background:white;border:1px solid #b5c6d5;border-radius:6px;cursor:pointer}button.primary{background:#1565a8;color:white;border-color:#1565a8}button:hover{border-color:#1565a8}label{display:block;font-size:13px;font-weight:650;margin:8px 0}label output{float:right;font-weight:500;font-variant-numeric:tabular-nums}input[type=range],select{display:block;width:100%;margin:4px 0 0}input[type=range]{accent-color:#1a78ba}select{padding:7px;border:1px solid #b8c8d8;background:white;border-radius:6px;font:inherit}.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 15px}.status{padding:10px;border-left:4px solid #458bc0;background:#edf4fc}.status.good{border-color:#339869;background:#eafaef}.status.bad{border-color:#c98934;background:#fff5e8}.hidden{display:none}svg{display:block;width:100%;height:auto;background:#f9fcff;border:1px solid #e0e9f1;border-radius:7px}pre{font:12px/1.6 ui-monospace,Consolas,monospace;background:#f2f5f9;padding:8px;margin:4px 0;overflow:auto}.matrices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}.notes{margin:16px 0 35px;color:#5e7080;font-size:12px}@media(max-width:740px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.problems{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}.matrices{grid-template-columns:1fr}}
 </style></head><body><header><div><div class="tiny">FKEN / Tacit Virtual Lab / Robotics</div><h1>Uncertainty at the robot's hand</h1><p class="muted">Change the joint angles, change their uncertainty, and see how it propagates.</p></div></header>
-<main><nav class="nav"><a href="index.html">All problems</a><a href="https://bakulbadwal.github.io/arm-playground/">Arm Playground · kinematics</a><a href="https://ferrolho.github.io/robot-localization-explained/">Robot localization</a></nav>
+<main><nav class="nav"><a href="index.html">All investigations</a><a href="#mission">Virtual engineering mission</a><a href="https://bakulbadwal.github.io/arm-playground/">Arm Playground · kinematics</a><a href="https://ferrolho.github.io/robot-localization-explained/">Robot localization</a></nav>
+<section class="panel" id="mission" style="margin:13px 0"><h2>Virtual engineering mission · meet a tip-position specification</h2>
+<p>Position a simulated two-link arm within <strong>9 cm</strong> of the marked target. Plan at most two x/y position observations to reduce the largest 1σ uncertainty direction below <strong>6 cm</strong>. The mission fixes link lengths at 1.0/0.8 m, joint uncertainties at 8°/10°, correlation at 0.2 and observation noise at 4 cm. The measurement plan updates covariance, not the estimated mean: this is uncertainty-aware design, not a closed-loop robot controller.</p>
+<div class="grid"><div>
+<label>Mission joint 1 <output id="mission-q1-value"></output><input type="range" id="mission-q1" min="-180" max="180" value="30" step="1"></label>
+<label>Mission joint 2 <output id="mission-q2-value"></output><input type="range" id="mission-q2" min="-180" max="180" value="60" step="1"></label>
+<label>Next position observation<select id="mission-axis"><option value="x">Measure x</option><option value="y">Measure y</option></select></label>
+<div class="commands"><button id="measure" class="primary">Plan selected observation</button><button id="verify-mission">Verify design</button><button id="restart-mission">Reset observations</button></div>
+</div>
+<div><svg id="mission-view" viewBox="0 0 480 390" role="img" aria-label="Arm, desired target, and after-measurement uncertainty">
+<path d="M0 195H480M240 0V390" fill="none" stroke="#e3e9f0"/>
+<circle id="m-goal-radius" r="8.5" fill="#0e8050" fill-opacity=".09" stroke="#0e8050" stroke-dasharray="4 3" stroke-width="1.5"/>
+<ellipse id="m-uncertainty" fill="#4799be" fill-opacity=".16" stroke="#2878a1" stroke-width="2"/>
+<polyline id="m-arm" fill="none" stroke="#294d69" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="240" cy="195" r="6" fill="#294d69"/><circle id="m-joint" r="5" fill="#476e8c"/>
+<circle id="m-tip" r="6" fill="#1469ae"/><circle id="m-goal" r="5" fill="#158358"/>
+</svg><p class="tiny">Green: target and 9 cm tolerance · Blue: arm tip and 2σ uncertainty ellipse</p></div></div>
+<p id="mission-state" class="status" aria-live="polite"></p><p id="mission-result" aria-live="polite"></p>
+</section>
 <section class="panel" style="margin-bottom:13px"><h2>Problems</h2><ul class="problems" id="problems"></ul></section>
 <div class="grid"><section class="panel">
 <h2 id="title">Joint uncertainty</h2><p id="prompt"></p><label>Your prediction<select id="answer"></select></label><div class="commands"><button class="primary" id="check">Check answer</button><button id="reset">Reset</button><button id="reference">Reference</button></div><div id="feedback" aria-live="polite"></div><p class="status hidden" id="help"></p>
@@ -12,11 +30,7 @@
 <ellipse id="before" fill="#efb552" fill-opacity=".25" stroke="#c48b2c" stroke-width="2"/><ellipse id="after" fill="#5496c4" fill-opacity=".24" stroke="#267eaf" stroke-width="2"/>
 <polyline id="arm" fill="none" stroke="#294d69" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="240" cy="195" r="7" fill="#294d69"/><circle id="joint" r="6" fill="#507f9d"/><circle id="tip" r="6" fill="#1c83b6"/>
 </svg><p class="tiny">Gold: before measurement · Blue: after measurement · 2σ ellipses</p><div id="metrics"></div></section>
-<section class="panel full" id="mission"><h2>Virtual engineering mission · meet a tip-position specification</h2>
-<p>Configure the arm to reach the marked target within <strong>9 cm</strong> and plan no more than two Cartesian position measurements to reduce the largest 1σ uncertainty direction below <strong>6 cm</strong>. Choose joint 1 and joint 2 angles with the controls above; select x or y under Position measurement, then take that measurement. The mission fixes link lengths at 1.0 m and 0.8 m, joint uncertainties at 8° and 10°, correlation at 0.2, and sensor noise at 4 cm, regardless of the exploratory sliders. This is a virtual measurement-design exercise, not a dynamic robot controller.</p>
-<div class="commands"><button id="measure" class="primary">Take selected measurement</button><button id="verify-mission">Verify design</button><button id="restart-mission">Reset measurements</button></div>
-<p id="mission-state" class="status" aria-live="polite"></p><p id="mission-result" aria-live="polite"></p>
-</section><section class="panel full"><h2>The calculation</h2><p>p = f(q) · Σp ≈ JΣqJᵀ · measurement update: P′ = P − Phᵀ(hPhᵀ+R)⁻¹hP</p><div class="matrices"><div><strong>Jacobian J</strong><pre id="J"></pre></div><div><strong>Joint covariance Σq (rad²)</strong><pre id="Q"></pre></div><div><strong>Tip covariance Σp (m²)</strong><pre id="P"></pre></div><div><strong>After measurement P′ (m²)</strong><pre id="U"></pre></div></div></section></div>
+<section class="panel full"><h2>The calculation</h2><p>p = f(q) · Σp ≈ JΣqJᵀ · measurement update: P′ = P − Phᵀ(hPhᵀ+R)⁻¹hP</p><div class="matrices"><div><strong>Jacobian J</strong><pre id="J"></pre></div><div><strong>Joint covariance Σq (rad²)</strong><pre id="Q"></pre></div><div><strong>Tip covariance Σp (m²)</strong><pre id="P"></pre></div><div><strong>After measurement P′ (m²)</strong><pre id="U"></pre></div></div></section></div>
 <p class="notes"><a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/ROBOTICS.md">Model notes</a> · <a href="https://github.com/JadanPoll/Tacit_Virtual_Lab/blob/main/models/robotics_math.test.mjs">Tests</a></p>
 </main>
 <script id="math-core">
@@ -51,10 +65,11 @@ function mission(q1,q2,measurements=[]) {
  const m=calc({...constants,q1,q2});
  let P=m.P;
  for(const axis of measurements) P=condition(P,axis,constants.noise);
- const eig=(A)=>{const a=A[0][0],b=A[0][1],c=A[1][1];return Math.sqrt(Math.max(0,(a+c+Math.hypot(a-c,2*b))/2));};
+ const eig=(A)=>{const a=A[0][0],b=A[0][1],c=A[1][1],d=Math.hypot(a-c,2*b);
+   return {major:Math.sqrt(Math.max(0,(a+c+d)/2)),minor:Math.sqrt(Math.max(0,(a+c-d)/2)),angle:0.5*Math.atan2(2*b,a-c)};};
  const distance=Math.hypot(m.tip[0]-goal[0],m.tip[1]-goal[1]);
- const major=eig(P);
- return{goal,tip:m.tip,distance,major,measurements:measurements.slice(),P,posePass:distance<=0.09,uncertaintyPass:major<=0.06,
+ const {major,minor,angle}=eig(P);
+ return{goal,tip:m.tip,joint:m.joint,distance,major,minor,angle,measurements:measurements.slice(),P,posePass:distance<=0.09,uncertaintyPass:major<=0.06,
    success:distance<=0.09&&major<=0.06};
 }
 return{calc,condition,mission};
@@ -75,7 +90,17 @@ let current=0,settings={...standard};
 const fmt=x=>Number(x.toPrecision(4)).toString();
 let missionMeasurements=[];
 const missionProgress=()=>{const m=core.mission(settings.q1,settings.q2,missionMeasurements);
-$("mission-state").textContent="Target: ("+m.goal.map(fmt).join(", ")+") m · actual tip: ("+m.tip.map(fmt).join(", ")+") m · position error: "+fmt(100*m.distance)+" cm / 9 cm · largest 1σ: "+fmt(100*m.major)+" cm / 6 cm · measurements: "+(missionMeasurements.join(" → ")||"none")+" ("+missionMeasurements.length+"/2).";
+$("mission-state").textContent="Target: ("+m.goal.map(fmt).join(", ")+") m · tip: ("+m.tip.map(fmt).join(", ")+") m · position error: "+fmt(100*m.distance)+" cm / 9 cm · largest 1σ: "+fmt(100*m.major)+" cm / 6 cm · planned observations: "+(missionMeasurements.join(" → ")||"none")+" ("+missionMeasurements.length+"/2).";
+$("mission-q1").value=settings.q1;$("mission-q2").value=settings.q2;
+$("mission-q1-value").textContent=settings.q1+"°";$("mission-q2-value").textContent=settings.q2+"°";
+$("mission-axis").value=settings.axis;
+const X=x=>240+x*94,Y=y=>195-y*94;
+$("m-arm").setAttribute("points",[[0,0],m.joint,m.tip].map(p=>X(p[0])+","+Y(p[1])).join(" "));
+for(const [id,point] of [["m-joint",m.joint],["m-tip",m.tip],["m-goal",m.goal]]){ $(id).setAttribute("cx",X(point[0]));$(id).setAttribute("cy",Y(point[1])); }
+$("m-goal-radius").setAttribute("cx",X(m.goal[0]));$("m-goal-radius").setAttribute("cy",Y(m.goal[1]));
+const ellipse=$("m-uncertainty");ellipse.setAttribute("cx",X(m.tip[0]));ellipse.setAttribute("cy",Y(m.tip[1]));
+ellipse.setAttribute("rx",2*m.major*94);ellipse.setAttribute("ry",2*m.minor*94);
+ellipse.setAttribute("transform","rotate("+(-m.angle*180/Math.PI)+" "+X(m.tip[0])+" "+Y(m.tip[1])+")");
 return m;};
 function restartMission(){missionMeasurements=[];$("mission-result").textContent="";missionProgress();}
 const matr=A=>A.map(row=>"[ "+row.map(x=>fmt(x).padStart(10)).join(", ")+" ]").join("\n");
@@ -108,7 +133,9 @@ if(correct){progress[p.id]=true;try{localStorage.setItem("tacit-robotics-v1",JSO
 for(const [key,label,unit,min,max,step] of controls){const l=document.createElement("label");l.textContent=label;const o=document.createElement("output");o.id=key+"-out";l.append(o);const el=document.createElement("input");el.type="range";el.id=key;el.min=min;el.max=max;el.step=step;el.addEventListener("input",()=>{settings[key]=Number(el.value);o.textContent=el.value+unit;$("feedback").textContent="";if(key==="q1"||key==="q2")restartMission();draw();});l.append(el);$("controls").append(l);}
 $("axis").addEventListener("change",()=>{settings.axis=$("axis").value;if(problems[current].id==="sensor")$("prompt").textContent="At this pose, does observing "+settings.axis+" with a noisy sensor also reduce uncertainty in "+(settings.axis==="x"?"y":"x")+"?";$("feedback").textContent="";draw();});
 $("check").onclick=grade;$("reset").onclick=reset;$("reference").onclick=()=>{$("help").textContent=problems[current].ref;$("help").classList.toggle("hidden");};
-$("measure").onclick=()=>{if(missionMeasurements.length===2){$("mission-result").className="status bad";$("mission-result").textContent="The two-measurement budget is exhausted. Reset measurements to try another plan.";return;}missionMeasurements.push(settings.axis);$("mission-result").textContent="";missionProgress();};
+for(const key of ["q1","q2"]){$("mission-"+key).addEventListener("input",()=>{settings[key]=Number($("mission-"+key).value);$(key).value=settings[key];$(key+"-out").textContent=settings[key]+"°";restartMission();draw();});}
+$("mission-axis").addEventListener("change",()=>{settings.axis=$("mission-axis").value;$("axis").value=settings.axis;draw();});
+$("measure").onclick=()=>{if(missionMeasurements.length===2){$("mission-result").className="status bad";$("mission-result").textContent="The two-measurement budget is exhausted. Reset measurements to try another plan.";return;}missionMeasurements.push($("mission-axis").value);$("mission-result").textContent="";missionProgress();};
 $("verify-mission").onclick=()=>{const m=missionProgress();$("mission-result").className="status "+(m.success?"good":"bad");$("mission-result").textContent=m.success?"PASS: position and uncertainty specifications both satisfied within the two-observation budget.":"FAIL: "+(!m.posePass?"Move the arm closer to the target. ":"")+(!m.uncertaintyPass?"Use the remaining measurement budget to reduce uncertainty.":"");};
 $("restart-mission").onclick=restartMission;
 function route(){const id=location.hash.slice(1),i=problems.findIndex(p=>p.id===id);current=i<0?0:i;reset();}
