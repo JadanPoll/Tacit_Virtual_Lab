@@ -2,14 +2,20 @@
 (function (root) {
   "use strict";
   const N=32, LANES=32, MAX_CALLS=256;
-  function sectorSet(indices) {
+  function byteSectorSet(addresses) {
     const sectors=new Set();
-    for (const index of indices) {
-      if (!Number.isInteger(index) || index<0 || index>=N*N) throw Error("Out-of-range or noninteger memory index: "+index);
-      const first=Math.floor(index*4/32),last=Math.floor((index*4+3)/32);
-      for(let s=first;s<=last;s++) sectors.add(s);
+    for(const address of addresses) {
+      if(!Number.isSafeInteger(address)||address<0||address>Number.MAX_SAFE_INTEGER-3)throw Error("Invalid byte address: "+address);
+      const first=Math.floor(address/32),last=Math.floor((address+3)/32);
+      for(let s=first;s<=last;s++)sectors.add(s);
     }
     return [...sectors];
+  }
+  function sectorSet(indices) {
+    for (const index of indices) {
+      if (!Number.isInteger(index) || index<0 || index>=N*N)throw Error("Out-of-range or noninteger memory index: "+index);
+    }
+    return byteSectorSet(indices.map(index=>index*4));
   }
   function makeInput(seed) {
     let x=seed>>>0;
@@ -78,7 +84,7 @@
     warpStore(Array.from({length:32}, (_,lane)=>row*N+lane), values);
   }
 }`;
-  const API={N,sectorSet,makeInput,expected,run,baseline,tiled};
+  const API={N,sectorSet,byteSectorSet,makeInput,expected,run,baseline,tiled};
   if(typeof module!=="undefined"&&module.exports)module.exports=API;
   root.GPUVirtual=API;
 })(typeof self!=="undefined"?self:globalThis);
