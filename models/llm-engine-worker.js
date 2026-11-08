@@ -6,7 +6,7 @@ function snapshot(result) {
   const i=Math.min(2,result.vizData.length-1);
   const v=result.vizData[i];
   return {
-    step:result.step, loss:result.loss, doc:result.doc, tokens:result.tokens,
+    step:result.step, loss:result.loss, learningRate:result.learningRate, trainingHorizon:model.numSteps, doc:result.doc, tokens:result.tokens,
     position:i, head:{...v.headVectors[0][0],weights:v.attentionWeights[0][0]},
     logits:v.logits, vocab:[...model.uchars,"<BOS>"],
     parameters:model.params.length, history:model.getLossHistory().slice(-30)
@@ -15,7 +15,7 @@ function snapshot(result) {
 function start(text=preset,seed=42) {
   const docs=text.split("\n").map(v=>v.trim()).filter(Boolean);
   if(docs.length<3||docs.some(v=>v.length>7)||docs.join("").length>300)throw Error("Use 3–50 short training lines (up to seven characters each).");
-  model=new MicroGPT({nEmbd:8,nHead:2,nLayer:1,blockSize:8,learningRate:.025,numSteps:120,seed});
+  model=new MicroGPT({nEmbd:8,nHead:2,nLayer:1,blockSize:8,learningRate:.025,numSteps:1000,seed});
   model.loadData(docs.join("\n"));model.initParams();
   last=model.trainStep();
   self.postMessage({type:"state",...snapshot(last),sample:null,documents:docs.length});
@@ -26,7 +26,9 @@ self.onmessage=e=>{
     if(data.type==="reset")start(data.dataset||preset,data.seed??42);
     else if(data.type==="train"){
       if(!model)throw Error("Initialize the model first.");
-      const n=data.steps===10?10:1;
+      const remaining=model.numSteps-model.step;
+      if(remaining<=0){self.postMessage({type:"limit",message:"Learning-rate schedule complete. Reset the model to start a new experiment."});return;}
+      const n=Math.min(data.steps===10?10:1,remaining);
       for(let i=0;i<n;i++)last=model.trainStep();
       self.postMessage({type:"state",...snapshot(last),sample:null});
     } else if(data.type==="generate"){
