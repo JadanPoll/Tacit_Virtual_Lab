@@ -58,7 +58,7 @@
     return {correct:mismatches===0,mismatches,firstMismatch,readSectors,writeSectors,totalSectors:readSectors+writeSectors,
       reads,writes,warpInstructions:calls,trace};
   }
-  const baseline=String.raw\`function kernel() {
+  const baseline=String.raw`function kernel() {
   // One warp writes each output row. The read is strided.
   for (let row = 0; row < N; row++) {
     const source = Array.from({length:32}, (_,lane) => lane*N + row);
@@ -66,8 +66,8 @@
     const values = warpLoad(source);
     warpStore(destination, values);
   }
-}\`;
-  const tiled=String.raw\`function kernel() {
+}`;
+  const tiled=String.raw`function kernel() {
   // Virtual shared tile: local JavaScript array, no global memory transactions.
   const tile = [];
   for (let row=0; row<N; row++) {
@@ -77,7 +77,7 @@
     const values = Array.from({length:32}, (_,lane)=>tile[lane][row]);
     warpStore(Array.from({length:32}, (_,lane)=>row*N+lane), values);
   }
-}\`;
+}`;
   const API={N,sectorSet,makeInput,expected,run,baseline,tiled};
   if(typeof module!=="undefined"&&module.exports)module.exports=API;
   root.GPUVirtual=API;
