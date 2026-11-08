@@ -6,7 +6,7 @@ function snapshot(result) {
   const i=Math.min(2,result.vizData.length-1);
   const v=result.vizData[i];
   return {
-    step:result.step+1, loss:result.loss, doc:result.doc, tokens:result.tokens,
+    step:result.step, loss:result.loss, doc:result.doc, tokens:result.tokens,
     position:i, head:{...v.headVectors[0][0],weights:v.attentionWeights[0][0]},
     logits:v.logits, vocab:[...model.uchars,"<BOS>"],
     parameters:model.params.length, history:model.getLossHistory().slice(-30)
