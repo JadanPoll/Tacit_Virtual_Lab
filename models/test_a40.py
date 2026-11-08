@@ -70,7 +70,8 @@ class ModelTests(unittest.TestCase):
     def test_parameterized_memory_probes_against_independent_address_arithmetic(self):
         r=random.Random(0xA40)
         cases=[(0,4,0xffffffff),(96,4,0xffffffff),(4,4,0xffffffff),
-               (0,128,0xffffffff),(0,0,0xffffffff),(0,4,0)]
+               (0,128,0xffffffff),(0,0,0xffffffff),(0,4,0),
+               (31,0,0xffffffff),(31,64,0xffffffff),(30,4,0xffffffff)]
         cases.extend((r.randrange(0,2048,4),r.randrange(0,200,4),r.getrandbits(32)) for _ in range(140))
         for base,stride,mask in cases:
             out=run('--probe','--base',base,'--stride',stride,'--mask',hex(mask))
@@ -81,7 +82,7 @@ class ModelTests(unittest.TestCase):
             expected=[(t,base+t*stride,(base+t*stride)//32,(base+t*stride)//128)
                       for t in range(32) if mask & (1<<t)]
             self.assertEqual(rows,expected,(base,stride,mask))
-            distinct={a//32 for _,a,_,_ in expected}
+            distinct={sector for _,a,_,_ in expected for sector in range(a//32,(a+3)//32+1)}
             self.assertIn(f'sectors={len(distinct)};',out)
 
     def test_branch_predicates_with_partial_masks(self):
