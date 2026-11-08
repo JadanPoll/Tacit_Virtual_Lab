@@ -14,3 +14,15 @@ assert.deepEqual(gpu.sectorSet([7,8]),[0,1]);
 assert.throws(()=>gpu.sectorSet([1024]),/Out-of-range/);
 assert.equal(gpu.run("function kernel() {}",42).correct,false);
 assert.throws(()=>gpu.run("function kernel(){warpLoad([0])}",42),/exactly 32/);
+
+const wrong=gpu.baseline.replace("row*N + lane","lane*N + row"); // corruption: non-transposed output
+assert.equal(gpu.run(wrong,98765).correct,false,"A plausible wrong indexing expression must fail correctness");
+const duplicate=`function kernel() {
+ for(let row=0;row<N;row++){
+  const indices=Array.from({length:32},(_,i)=>row*N+i);
+  const values=warpLoad(indices);
+  warpStore(Array(32).fill(row*N),values);
+ }
+}`;
+assert.equal(gpu.run(duplicate,12345).correct,false,"Duplicate output writes must not count as a correct run");
+
