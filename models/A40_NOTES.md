@@ -37,4 +37,4 @@ Instruction arithmetic is not executed as a CUDA program. Scheduling, cache and 
 
 On Ampere, crossing an aligned 128-byte cache-line boundary does not by itself imply poor coalescing; counting the requested 32-byte sectors is more informative. See [CUDA Best Practices](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/).
 
-The browser GPU problems currently use a simpler JavaScript adaptation. They do not yet execute the C model via WebAssembly.
+The [virtual GPU kernel investigation](../gpu-investigation.html) runs a separate JavaScript warp-sector transaction model with editable 32×32 transpose kernels, four generated test inputs, and a correctness oracle. It deliberately does **not** execute the C simulator or model cache hierarchy, occupancy, bank conflicts, runtime scheduling, or real A40 timing. The older browser GPU concept probes also remain a simpler JavaScript adaptation. The C memory probe now counts both 32-byte sectors when a 4-byte access straddles a sector boundary, including cases such as base=31, stride=0.
