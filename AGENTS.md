@@ -6,10 +6,17 @@ Keep agent instructions, implementation strategy, decisions about duplication, a
 
 Explain a model limitation at the point where it changes how someone should interpret a result; avoid repetitive boundary disclaimers. Prefer linking an excellent existing practice environment to rebuilding the same exercises.
 
-## Exercise admission and evidence
+## RSM/REM exercise selection
 
-Before implementing any new problem, compare the intended operation and failure mode with the corresponding FKEN project idea and the [project capability audit](PROJECT_CAPABILITY_AUDIT.md). Do not create questions to increase the question count or to cover topics for their own sake. Small probes are acceptable as explicitly labeled prerequisites, but must not be conflated with demonstrated system competence.
+The project-first method is recorded in [Project Capability Audit](PROJECT_CAPABILITY_AUDIT.md) and canonical [FKEN Project Landscapes](https://github.com/JadanPoll/FKEN_Ecosystem/tree/main/Project_Ideas/Landscapes).
 
-Prefer an established simulator, compiler, runtime, firmware, CAD engine or physics model. When the experience uses a deliberately scoped virtual model, say what it simulates and does not simulate; do not imply physical-hardware validation. In a credible engineering investigation the learner changes an executable artifact or configuration, receives a failure/trace, corrects it and gets independent evidence of the outcome. Tests should reject plausible wrong repairs and cover meaningful variation (not just the happy path).
+Before implementing any exercise:
 
-For a virtual project-level claim, require an end-to-end slice, a realistic integration failure, a correction and reproducible independent verification. When those are absent, record the gap instead of inventing exercise content. Document important limitations in model notes and user-facing affordances, not as repetitive generic disclaimers.
+1. Identify the *set of related project ideas* and preserve consequential alternatives in a JSON array.
+2. Certify the original question against its parent purpose and holistic goal (RSM-02.09–02.12). Do not accept a convenient math proxy.
+3. Descend through the **necessary constituent abilities**; compose them only if that particular learning goal requires it.
+4. Establish stopping points for each branch: base confidence, research/education, existing solved tool, virtual sufficiency or physical evidence needed (RSM-04.07 and REM).
+5. Reverse-engineer the smallest credible virtual experience from those constituents, preferably by adapting trustworthy existing implementations.
+6. Review whether the experience is directionally valuable for the parent project set and can be realistically iterated.
+
+Do not increase problem counts for their own sake. Small exercises can be valuable if they serve a constituent, but not because they make a course look comprehensive. Preserve existing working implementations and test actual user decisions before synthetic edge cases. Never certify physical hardware competence from a scoped model.
