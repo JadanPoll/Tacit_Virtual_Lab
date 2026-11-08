@@ -1,20 +1,27 @@
-name: LLM math exercises
+name: Full GPT and LLM problem checks
 on:
   push:
     paths:
-      - 'models/llm-core.js'
-      - 'models/llm_math.test.mjs'
       - 'llm.html'
+      - 'models/vendor/**'
+      - 'models/llm-engine-worker.js'
+      - 'models/llm-grade-worker.js'
+      - 'models/llm_real.test.mjs'
       - '.github/workflows/llm-lab.yml'
   pull_request:
     paths:
-      - 'models/llm-core.js'
-      - 'models/llm_math.test.mjs'
       - 'llm.html'
+      - 'models/vendor/**'
+      - 'models/llm-engine-worker.js'
+      - 'models/llm-grade-worker.js'
+      - 'models/llm_real.test.mjs'
   workflow_dispatch:
 jobs:
-  math:
+  llm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: node --test models/llm_math.test.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test models/llm_real.test.mjs

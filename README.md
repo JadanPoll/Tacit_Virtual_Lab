@@ -6,7 +6,7 @@ Build intuition by making predictions, changing parameters, and exploring the be
 
 ## LLM systems
 
-**[LLM problem sets](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/llm.html)** — Fifteen interactive problems on tokenization, attention, training updates, decoding, KV caching, memory, quantization, and retrieval. Predict an outcome, vary inputs, and inspect the calculation.
+**[LLM coding problems](https://raw.githack.com/JadanPoll/Tacit_Virtual_Lab/refs/heads/main/llm.html)** — Implement an attention head, cross-entropy gradient, and top-k temperature decoder. Test your code against calculations from a running GPT, train the model on small examples, and inspect its activations.
 
 For a real-model view, [Transformer Explainer](https://poloclub.github.io/transformer-explainer/) runs GPT-2 in your browser.
 
